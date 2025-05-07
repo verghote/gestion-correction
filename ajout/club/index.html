@@ -1,0 +1,38 @@
+
+    <div class="formulaire" style="width:36rem">
+        <div id="msg"></div>
+
+        <label for="id" class="col-form-label obligatoire">Code</label>
+        <i class="bi bi-info-circle text-primary"
+           data-bs-toggle="popover"
+           data-bs-trigger="hover"
+           data-bs-html="true"
+           data-bs-placement='right'
+           data-bs-title="Numéro composé de 6 chiffres"></i>
+        <input id='id'
+               type="text"
+               class="form-control"
+               style="width: 150px"
+               required
+               minlength='6'
+               maxlength='6'
+               pattern="^[0-9]{6}$"
+               autocomplete="off">
+
+        <label for="nom" class="col-form-label  obligatoire">Nom</label>
+        <input id="nom"
+               type="text"
+               class="form-control"
+               required
+               maxlength='30'
+               pattern="^[A-Za-z]+([ '\-.]?[A-Za-z])*$"
+               autocomplete="off">
+
+        <div class="d-flex flex-row justify-content-between mt-3">
+            <button id='btnAjouter' class="btn btn-sm btn-danger">Ajouter</button>
+            <a href="../../index.php" class="btn btn-sm btn-primary">
+                <i class="bi bi-arrow-90deg-up"></i>
+                Annuler
+            </a>
+        </div>
+    </div>

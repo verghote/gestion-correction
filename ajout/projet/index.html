@@ -1,0 +1,43 @@
+<div class="formulaire">
+    <div id="msg"></div>
+    <div class="row ">
+        <div class="col-12 col-sm-6">
+            <label for="nom" class="obligatoire col-form-label">Nom du projet </label>
+            <input id="nom"
+                   type="text"
+                   minlength="10"
+                   maxlength="150"
+                   required
+                   placeholder="Nom du projet"
+                   class="form-control">
+        </div>
+    </div>
+    <div class="row pt-3">
+        <div class="input-group ">
+            <label class="input-group-text" for="idCompetence">Competence</label>
+            <select class="form-select " id="idCompetence" style="font-size: 0.7rem"></select>
+            <button id="btnAjouterCompetence" class="btn btn-danger ">Ajouter</button>
+        </div>
+    </div>
+    <div class="row pt-3">
+        <div class="d-flex justify-content-between">
+            <h4 class="text-secondary">Les compétences associées au projet</h4>
+        </div>
+        <div class='table-responsive'>
+            <table class='table table-sm table-borderless tablesorter-bootstrap'>
+                <thead>
+                <tr>
+                    <th style="width:20px"></th>
+                    <th>Libellé</th>
+                </tr>
+                </thead>
+                <tbody id="lesLignes"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row mx-3 text-center ">
+        <button id="btnEnregistrer" class="btn btn-danger ">Enregistrer le projet et ses compétences</button>
+    </div>
+</div>
+
+

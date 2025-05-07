@@ -1,0 +1,40 @@
+<div id="msg"></div>
+<div class="formulaire" id='formulaire' style="max-width: 56rem">
+    <div class="row mb-3">
+        <div class="col-sm-6 ">
+            <label for="date" class="obligatoire col-form-label">Date de votre épreuve</label>
+            <input id='date'
+                   type="date"
+                   style="width: 175px"
+                   class="form-control"
+                   required
+            >
+        </div>
+        <div class="col-sm-6">
+            <label for="nom" class="obligatoire col-form-label">Nom de votre épreuve</label>
+            <input id='nom'
+                   type="text"
+                   class="form-control"
+                   required
+                   pattern="^[0-9A-Za-zÀÇÈÉÊàáâçèéêëî](.*[0-9A-Za-zÀÇÈÉÊàáâçèéêëî!])*$"
+                   maxlength="100"
+                   minlength="8"
+            >
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col">
+            <label class='obligatoire col-form-label' for="description">Description de l'épreuve </label>
+            <!-- Remarque class style et placeholder sont inutiles puisquei le champ sera masqué par ckEditor -->
+            <textarea id='description' required                      ></textarea>
+        </div>
+    </div>
+
+    <div class="d-flex flex-row justify-content-between mt-3">
+        <button id='btnAjouter' class="btn btn-sm btn-danger">Ajouter</button>
+        <a href="../../index.php" class="btn btn-sm btn-primary">
+            <i class="bi bi-arrow-90deg-up"></i>
+            Annuler
+        </a>
+    </div>
+</div>

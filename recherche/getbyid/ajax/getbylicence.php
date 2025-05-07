@@ -1,0 +1,25 @@
+<?php
+require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
+
+// vérification de la transmission du paramètre attendu : licence
+if (!isset($_POST['licence'])) {
+    Erreur::envoyerReponse("Numéro de licence non transmis", 'licenceR');
+}
+
+// Récupération du coureur
+$licence = $_POST['licence'];
+
+// vérification du format de la licence
+if (!preg_match('/^[0-9]{6,7}$/', $licence)) {
+    Erreur::envoyerReponse("Numéro de licence non conforme", 'licenceR');
+}
+
+// Récupération du coureur
+$ligne = Coureur::getByLicence($licence);
+// Si le coureur n'existe pas, on envoie une erreur
+if (!$ligne) {
+    Erreur::envoyerReponse("Numéro de licence inexistant", 'licenceR');
+}
+
+// envoi de la réponse
+echo json_encode($ligne);

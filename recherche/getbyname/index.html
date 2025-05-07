@@ -1,0 +1,48 @@
+<style>
+    .fiche-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 0;
+        background: transparent;
+    }
+
+    .fiche-label {
+        font-weight: bold;
+        text-align: left;
+        padding: 0.4rem 1rem 0.4rem 0.4rem;
+        border: 1px solid #ddd;
+    }
+
+    .fiche-value {
+        padding: 0.4rem 0 0.4rem 1rem;
+        text-align: left;
+        word-break: break-word;
+        border: 1px solid #ddd;
+    }
+
+</style>
+
+<div class="container" style="max-width: 800px; margin: auto;">
+    <!-- Zone de recherche -->
+    <div class="zone-saisie">
+        <label for="nomR" hidden>Nom</label>
+        <input id="nomR" type="text" style="max-width: 350px;"
+               class="form-control recherche"
+               placeholder="Nom et/ou prénom du licencié"
+               pattern="^[a-zA-Z ]+$"
+               autocomplete="off">
+    </div>
+    <!-- Zone d'affichage des données -->
+    <div class="fiche-grid">
+        <div class="fiche-label">Licence</div><div class="fiche-value" id="licence"></div>
+        <div class="fiche-label">Nom</div><div class="fiche-value" id="nom"></div>
+        <div class="fiche-label">Prénom</div><div class="fiche-value" id="prenom"></div>
+        <div class="fiche-label">Date de naissance</div><div class="fiche-value" id="dateNaissance"></div>
+        <div class="fiche-label">Sexe</div><div class="fiche-value" id="sexe"></div>
+        <div class="fiche-label">Âge</div><div class="fiche-value" id="age"></div>
+        <div class="fiche-label">Catégorie</div><div class="fiche-value" id="idCategorie"></div>
+        <div class="fiche-label">Club</div><div class="fiche-value" id="nomClub"></div>
+    </div>
+</div>
