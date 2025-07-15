@@ -7,11 +7,11 @@ $titre = "Les coureurs d'une catégorie";
 // récupération des catégories afin d'alimenter la liste déroulante
 $data = json_encode(Categorie::getListe());
 
-$head = <<<EOD
+$head = <<<HTML
 <script>
        let data = $data;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

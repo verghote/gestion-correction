@@ -6,12 +6,14 @@ require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
 $titre = "Liste des catégories";
 
 // Récupération des catégories avec l'intervalle des années
-$data = json_encode(Categorie::getAll());
-$head = <<<EOD
-<script>
-    let data = $data;
-</script>
-EOD;
+$lesCategories = json_encode(Categorie::getAll());
+
+$head = <<<HTML
+    <script src="/composant/html2pdf/html2pdf.bundle.min.js"></script>
+    <script>
+        let lesCategories = $lesCategories;
+    </script>
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

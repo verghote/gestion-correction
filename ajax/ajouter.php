@@ -1,11 +1,9 @@
 <?php
-declare(strict_types=1);
-
 // activation du chargement dynamique des ressources
-require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
+require $_SERVER['DOCUMENT_ROOT'] . '/include/autoload.php';
 
 // Contrôle sur le nom de la classe
-if (!isset($_POST['table']) || ! class_exists($_POST['table'])) {
+if (!isset($_POST['table']) || !class_exists($_POST['table'])) {
     Erreur::envoyerReponse("La table n'est pas transmise ou n'existe pas.", 'global');
 }
 
@@ -14,7 +12,6 @@ $table = $_POST['table'];
 
 // création d'une instanciation dynamique de classe
 $table = new $table();
-
 // Ajout dans la table en vérifiant que tous les champs sont corrects
 if (!$table->donneesTransmises()) {
     $reponse = ['error' => $table->getLesErreurs()];

@@ -7,11 +7,11 @@ $titre = "Gestion des Annonces";
 
 // récupération des annonces
 $data = json_encode(Annonce::getAll());
-$head = <<<EOD
+$head = <<<HTML
 <script>
     let data = $data;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

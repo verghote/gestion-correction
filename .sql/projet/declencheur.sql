@@ -24,28 +24,38 @@ begin
     end if;
 end;
 
-create trigger avantAjoutCompetenceProjet
-    before insert
-    on competenceprojet
+create trigger avantAjoutCompetenceprojet
+    before insert on competenceprojet
     for each row
 begin
+    declare existeCompetence int default 0;
+    declare bloc int default 0;
+    declare message text;
 
-    -- contrôle sur idCompetence
-    if new.idCompetence NOT REGEXP '^[0-9]{1,2}$' THEN
-        SET @message = CONCAT('#Le format de la compétence avec l''ID ', new.idCompetence, ' est invalide.');
-        signal SQLSTATE '45000' set message_text = @message;
+    -- vérifie que le projet cible existe
+    if not exists (select 1 from projet where id = new.idProjet) then
+        signal sqlstate '45000'
+            set message_text = "#Ce projet n''existe pas";
     end if;
 
-    -- Seules les compétences du bloc 1 sont à indiquer dans un projet
-    if not exists(select 1 from competence where id = new.idCompetence and idBloc = 1) then
-        SET @message = CONCAT('#La compétence ', new.idCompetence, ' n''existe pas ou ne fait pas partie des compétences du bloc 1.');
-        signal SQLSTATE '45000' set message_text = @message;
+    -- vérifie que la compétence existe et récupère son idbloc
+    select count(*), ifnull(idbloc, 0)
+    into existeCompetence, bloc
+    from competence
+    where id = new.idCompetence;
+
+    if existeCompetence = 0 then
+        set message = concat('#La compétence ', new.idCompetence, ' n''existe pas');
+        signal sqlstate '45000' set message_text = message;
     end if;
 
-    -- controle sur idProjet
-    if not exists(select 1 from projet where id = new.idProjet) then
-        signal sqlstate '45000' set message_text = "#Ce projet n''existe pas";
+    -- vérifie que la compétence appartient au bloc 1
+    if bloc != 1 then
+        set message = concat('#La compétence ', new.idCompetence, ' ne fait pas partie du bloc 1.');
+        signal sqlstate '45000' set message_text = message;
     end if;
-end;
+
+
+end
 
 

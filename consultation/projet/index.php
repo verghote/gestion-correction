@@ -8,20 +8,18 @@ $titre = "Consultation des projets";
 // récupération de tous les projets
 $lesProjets = Projet::getAll();
 
-// Si aucun projet n'est enregistré dans la base de données, on envoie une erreur
-
+// Si aucun projet n'est enregistré dans la base de données, on redirige vers la page /erreur/erreur.php
 if (count($lesProjets) === 0) {
-   Erreur::envoyerReponse("Aucun projet n'est enregistré dans la base de données.", 'global');
+   Erreur::afficherReponse("Aucun projet n'est enregistré dans la base de données.", 'global');
 }
 
 $lesProjets = json_encode($lesProjets);
 
-$head =<<<EOD
+$head = <<<HTML
     <script>
         let lesProjets = $lesProjets;
     </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";
-

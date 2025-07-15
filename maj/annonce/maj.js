@@ -1,19 +1,19 @@
 ﻿"use strict";
 
-import {
-    configurerFormulaire,
-    donneesValides,
-    afficherErreurSaisie,
-    genererMessage,
-    afficherErreur,
-    afficherDansConsole,
-    retournerVers
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-/*global data, min, max, CKEDITOR */
+import {appelAjax} from "/composant/fonction/ajax.js";
+import {configurerFormulaire, configurerDate, donneesValides } from "/composant/fonction/controle.js";
+import {messageBox, retournerVers} from '/composant/fonction/afficher.js';
+import {getDateRelative} from "/composant/fonction/date.js";
 
-// variable stockant l'objet CKEditor
-let editor;
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+
+/*global annonce, tinymce */
 
 // récupération des élements de l'interface
 let nom = document.getElementById('nom');
@@ -22,80 +22,97 @@ let description = document.getElementById('description');
 let btnModifier = document.getElementById('btnModifier');
 let msg = document.getElementById('msg');
 
-// alimentation des champs sur le formulaire
-date.value = data.date;
-nom.value = data.nom;
-description.value = data.description;
 
-// Contrôle dynamique sur les champs de saisi
-date.min = min;
-date.max = max;
 
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 btnModifier.onclick = () => {
     // récupération de la valeur du composant CkEditor
-    description.value = CKEDITOR.instances.description.getData();
+    description.value =  tinymce.get('description').getContent();
     if ( donneesValides()) {
         modifier();
     }
 };
 
-// mise en place du composant ckEditor
-CKEDITOR.replace('description');
-
-// Mise en place des balises div de class 'messageErreur' sur chaque champ de saisie
-configurerFormulaire();
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
 
 function modifier() {
     msg.innerHTML = '';
     // transmission des paramètres
     let modif = false;
     const lesValeurs = {};
-    if (nom.value !== data.nom) {
+    if (nom.value !== annonce.nom) {
         lesValeurs.nom = nom.value;
         modif = true;
     }
-    if (description.value !== data.description) {
+    if (description.value !== annonce.description) {
         lesValeurs.description = description.value;
         modif = true;
     }
-    if (date.value !== data.date) {
+    if (date.value !== annonce.date) {
         lesValeurs.date = date.value;
         modif = true;
     }
     if (modif === false)  {
-        afficherErreur("aucune modification constatée !");
+        messageBox("aucune modification constatée !", 'error');
         return;
     }
-    $.ajax({
+    appelAjax({
         url: '/ajax/modifier.php',
-        method: 'post',
-        dataType: 'json',
-        async: false,
         data: {
             table : 'annonce',
-            id : data.id,
+            id : annonce.id,
             lesValeurs : JSON.stringify(lesValeurs)
         },
         success: data => {
-            if (data.success) {
                 retournerVers(data.success, 'index.php');
-            } else if (data.error) {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de la modification');
-                    } else if (key === 'global') {
-                        msg.innerHTML =  genererMessage(message);
-                    } else  {
-                        afficherErreurSaisie(key, message );
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
         }
     });
 }
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+// Initialisation de TinyMCE
+tinymce.init({
+
+    license_key: 'gpl',
+    selector: '#description',
+
+    menubar: false,
+    plugins: 'link lists table  code autoresize image',
+    toolbar: [
+       ' styles | bold italic underline | forecolor backcolor | fontsizeselect | link | image | bullist numlist outdent indent | table | code'
+    ],
+    fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
+    autoresize_min_height: 200,
+    autoresize_max_height: 600,
+});
+
+// Mise en place des balises div de class 'messageErreur' sur chaque champ de saisie
+configurerFormulaire();
+
+// configuration de la date
+// intervalle accepté pour la date de l'événement : +- un an
+
+const min = getDateRelative("annee", -1); // un an avant
+const max = getDateRelative("annee", 1); // un an après
+const valeur = getDateRelative("mois",2); // une annonce est souvent réalisé 2 mois à l'avance
+
+configurerDate(date, {
+    min: min,
+    max: max,
+    valeur: valeur
+});
+
+
+
+
+// alimentation des champs sur le formulaire
+date.value = annonce.date;
+nom.value = annonce.nom;
+description.value = annonce.description;

@@ -31,11 +31,7 @@ if (empty($nom)) {
     Erreur::envoyerReponse('Le nom du projet doit être renseigné', 'nom');
 }
 
-
-// Le nom du projet doit être unique
-if (Projet::getByName($nom)) {
-    Erreur::envoyerReponse('Le nom du projet est déjà utilisé', 'nom');
-}
+// les autres contrôles sont mis en place dans les déclencheurs de la base de données
 
 // enregistrement du projet
 $reponse = Projet::enregistrer($nom, $lesCompetences);

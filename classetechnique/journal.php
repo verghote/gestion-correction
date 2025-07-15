@@ -3,19 +3,19 @@ declare(strict_types=1);
 
 /**
  * Classe permettant de journaliser automatiquement tout événement dans des fichiers log.
- * Les journaux sont créés à la demande dans le dossier .log à la racine du projet.
+ * Les journaux sont créés à la demande dans le dossier .log du dossier backoffice
  * Aucun fichier de configuration requis.
  *
  * @author Guy Verghote
- * @version 2025.1
- * @date 06/05/2025
+ * @version 2025.3
+ * @date 14/06/2025
  */
 class Journal
 {
     /**
-     * Nom du dossier de journalisation relatif à la racine du projet
+     * Nom du dossier de journalisation
      */
-    const REPERTOIRE = '/.log';
+    const REPERTOIRE = '/backoffice/.log';
 
     /**
      * Retourne le chemin absolu vers un fichier journal donné,
@@ -26,37 +26,23 @@ class Journal
      */
     private static function getChemin(string $nom): string
     {
-        $repertoire = self::verifierRepertoire();
-        return "$repertoire/$nom.log";
-    }
+        // Chemin absolu vers le dossier backoffice
+        $racineBackoffice = $_SERVER['DOCUMENT_ROOT'] . '/backoffice';
 
-    /**
-     * Vérifie l’existence du répertoire de logs et le crée si nécessaire.
-     *
-     * @return string Chemin absolu du dossier .log
-     */
-    private static function verifierRepertoire(): string
-    {
-        $racine = $_SERVER['DOCUMENT_ROOT'] ?? __DIR__;
-        $repertoire = $racine . self::REPERTOIRE;
+        // Vérifie que le dossier backoffice existe
+        if (!is_dir($racineBackoffice)) {
+            mkdir($racineBackoffice, 0775, true);
+        }
 
+        // Chemin vers le dossier de log
+        $repertoire = $racineBackoffice . '/.log';
+
+        // Crée le dossier .log s’il n’existe pas
         if (!is_dir($repertoire)) {
             mkdir($repertoire, 0775, true);
         }
 
-        return $repertoire;
-    }
-
-    /**
-     * Vérifie si un fichier journal (.log) portant ce nom existe.
-     *
-     * @param string $nom Nom du journal sans extension
-     * @return bool true si le fichier existe, false sinon
-     */
-    public static function verifierExistence(string $nom): bool
-    {
-        $fichier = self::getChemin($nom);
-        return is_file($fichier);
+        return "$repertoire/$nom.log";
     }
 
     /**
@@ -107,30 +93,22 @@ class Journal
     public static function getLesEvenements(string $journal = 'evenement'): array
     {
         $fichier = self::getChemin($journal);
-
-        if (!file_exists($fichier)) {
+        if (!is_file($fichier)) {
             return []; // Aucun événement à afficher
         }
-
-        $lignes = file($fichier, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $lignes = array_reverse($lignes);
-
-        $lesLignes = [];
-        foreach ($lignes as $ligne) {
-            $lesLignes[] = explode("\t", $ligne);
-        }
-        return $lesLignes;
+        // On lit le fichier en inversant l'ordre des lignes
+        return file($fichier, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     }
 
     /**
      * Supprime le journal spécifié (le fichier .log correspondant).
      *
-     * @param string $nom Nom du journal sans extension
+     * @param string $journal Nom du journal sans extension
      */
-    public static function supprimer(string $nom): void
+    public static function supprimer(string $journal): void
     {
-        $fichier = self::getChemin($nom);
-        if (file_exists($fichier)) {
+        $fichier = self::getChemin($journal);
+        if (is_file($fichier)) {
             unlink($fichier);
         }
     }
@@ -143,16 +121,16 @@ class Journal
      */
     public static function getListe(): array
     {
-        $repertoire = self::verifierRepertoire();
+        $repertoire = $_SERVER['DOCUMENT_ROOT'] . self::REPERTOIRE;
+        // Récupération de tous les fichiers .log dans le répertoire
         $fichiers = glob($repertoire . '/*.log');
+        // On extrait le nom de chaque fichier sans l'extension
         $liste = [];
-
         foreach ($fichiers as $fichier) {
             $nomComplet = basename($fichier); // ex: "erreur.log"
             $nomSansExt = pathinfo($nomComplet, PATHINFO_FILENAME); // ex: "erreur"
             $liste[$nomSansExt] = "Journal $nomSansExt";
         }
-
         return $liste;
     }
 

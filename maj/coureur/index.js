@@ -1,18 +1,18 @@
 ﻿"use strict";
 
-import {
-    configurerFormulaire,
-    decoderDate,
-    confirmer,
-    filtrerLaSaisie,
-    afficherErreurSaisie,
-    afficherSucces,
-    afficherDansConsole,
-    afficherErreur, enleverAccent,
-    avertir,
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-/* global intervalle, lesClubs, lesCoureurs */
+import {appelAjax, modifierColonne, supprimerEnregistrement} from "/composant/fonction/ajax.js";
+import { confirmer, afficherSousLeChamp, afficherToast} from '/composant/fonction/afficher.js';
+import {configurerFormulaire, configurerDate, effacerLesErreurs, filtrerLaSaisie} from "/composant/fonction/controle.js";
+import {enleverAccent} from "/composant/fonction/format.js";
+
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+/* global dateMin, dateMax, lesClubs, lesCoureurs */
 
 // récupération des éléments de l'interface
 const nom = document.getElementById('nom');
@@ -30,21 +30,9 @@ const nomR = document.getElementById('nomR');
 
 const btnSupprimer = document.getElementById('btnSupprimer');
 
-const msg = document.getElementById('msg');
-const info = document.getElementById('info');
-
-
-// intervalle sur la date de naissance
-dateNaissance.min = intervalle.dateMin;
-dateNaissance.max = intervalle.dateMax;
-
-// définition du contenu dynamique de la popover associé à la date de naissance
-info.setAttribute('data-bs-title', 'Il faut être né entre le ' + decoderDate(intervalle.dateMin) + ' et le ' + decoderDate(intervalle.dateMax));
-
-// alimentation de la zone de liste des clubs
-for (const club of lesClubs) {
-    idClub.add(new Option(club.nom, club.id));
-}
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
 nomR.onfocus = () => {
     nomR.value = '';
@@ -53,38 +41,66 @@ nomR.onfocus = () => {
 
 nom.onchange = function ()  {
     this.value = enleverAccent(this.value).toUpperCase();
-    afficherErreurSaisie(this.id);
+    // on affiche le message d'information sous le champ vide si les règles de validation sont respectées
+    afficherSousLeChamp(this.id);
     if (this.checkValidity()) {
-        modifierColonne(this.id, this);
+        // fonction de rappel en cas de succès
+        const success = () => {
+            const nomPrenom = this.value + ' ' + prenom.value;
+            // on réalise la modification dans le tableau lesCoureurs
+            const index = lesCoureurs.findIndex(c => c.licence === licence.value);
+            if (index !== -1) {
+                lesCoureurs[index].nomPrenom = nomPrenom;
+            }
+
+        };
+        modifierColonne('coureur', this.id, this.value, licence.value, success);
     }
 };
 
 prenom.onchange = function () {
     this.value = enleverAccent(this.value).toUpperCase();
-    afficherErreurSaisie(this.id);
+    afficherSousLeChamp(this.id);
     if (this.checkValidity()) {
-        modifierColonne(this.id, this);
+        // fonction de rappel en cas de succès
+        const success = () => {
+            const nomPrenom = nom.value + ' ' + this.value;
+            // on réalise la modification dans le tableau lesCoureurs
+            const index = lesCoureurs.findIndex(c => c.licence === licence.value);
+            if (index !== -1) {
+                lesCoureurs[index].nomPrenom = nomPrenom;
+            }
+
+        };
+        modifierColonne('coureur', this.id, this.value, licence.value, success);
     }
 };
 
-sexe.onchange = () => modifierColonne('sexe', sexe);
+sexe.onchange = function () {
+    modifierColonne('coureur', this.id, this.value, licence.value);
+};
 
 dateNaissance.onchange = function () {
-    afficherErreurSaisie(this.id);
+    afficherSousLeChamp(this.id);
     if (this.checkValidity()) {
-        modifierColonne(this.id, this);
+        modifierColonne('coureur', 'dateNaissance', dateNaissance.value, licence.value);
     }
 };
 
-idClub.onchange = () => modifierColonne('idClub', idClub);
+idClub.onchange = function () {
+    modifierColonne('coureur', this.id, this.value, licence.value);
+};
 
-ffa.onchange = () => modifierFfa(licence.value);
+ffa.onchange = () => {
+    const valeur = ffa.checked ? 1 : 0;
+    modifierColonne('coureur', 'ffa', valeur, licence.value);
+};
 
 email.onchange = function() {
     if (this.value !== '') {
-        afficherErreurSaisie(this.id);
+        afficherSousLeChamp(this.id);
         if (this.checkValidity()) {
-            modifierColonne(this.id, this);
+            modifierColonne('coureur', 'email', email.value, licence.value);
         }
     } else {
         effacerColonne(this.id);
@@ -93,254 +109,68 @@ email.onchange = function() {
 
 telephone.onchange = function() {
     if (this.value !== '') {
-        afficherErreurSaisie(this.id);
+        afficherSousLeChamp(this.id);
         if (this.checkValidity()) {
-            modifierColonne(this.id, this);
+            modifierColonne('coureur', this.id, this.value, licence.value);
         }
     } else {
         effacerColonne(this.id);
     }
 };
 
-
-
 // le bouton 'btnSupprimer'
 btnSupprimer.onclick = () => confirmer(supprimer);
 
 
-function modifierColonne(colonne, input) {
-    $.ajax({
-        url: '/ajax/modifiercolonne.php',
-        method: 'POST',
-        data: {
-            table: 'coureur',
-            colonne: colonne,
-            valeur: input.value,
-            id: licence.value
-        },
-        dataType: "json",
-        success: data => {
-            if (data.success) {
-                afficherSucces("Modification enregistrée");
-            } else {
-                for (const id in data.error) {
-                    const message = data.error[id];
-                    if (id === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (id === 'global') {
-                        afficherErreur(message);
-                    } else {
-                        afficherErreurSaisie(id, message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
 
-
-function modifierFfa() {
-    $.ajax({
-        url: '/ajax/modifiercolonne.php',
-        method: 'POST',
-        data: {
-            table: 'coureur',
-            colonne: 'ffa',
-            valeur: ffa.checked ? 1 : 0,
-            id: licence.value
-        },
-        dataType: "json",
-        success: data => {
-            if (data.success) {
-                afficherSucces("Modification enregistrée");
-            } else {
-                for (const id in data.error) {
-                    const message = data.error[id];
-                    if (id === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (id === 'global') {
-                        afficherErreur(message);
-                    } else {
-                        afficherErreurSaisie(id, message);
-                    }
-                }
-                ffa.checked = !ffa.checked;
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
 
 function effacerColonne(colonne) {
-    $.ajax({
+    appelAjax({
         url: 'ajax/clearcolonne.php',
-        method: 'POST',
         data: {
             colonne: colonne,
             licence: licence.value
         },
-        dataType: "json",
-        success: data => {
-            if (data.success) {
-                afficherSucces("Modification enregistrée");
-            } else {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (key === 'global') {
-                        afficherErreur(message);
-                    } else {
-                        afficherErreurSaisie(key, message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
+        success:() => {
+                afficherToast("Modification enregistrée");
         }
     });
 }
-
 
 
 /**
  * Demande de suppression du coureur actuellement affiché
  */
 function supprimer() {
-    $.ajax({
-        url: '/ajax/supprimer.php',
-        type: 'POST',
-        data: {
-            table: 'coureur',
-            id: licence.value
-        },
-        dataType: 'json',
-        success: data => {
-            if (data.success) {
-                avertir('Suppression réalisée');
-                // vider la zone de recherche
-                formulaire.style.display = 'none';
-                nomR.focus();
-                nomR.value = '';
-                licence.value = '';
-                nom.value = '';
-                prenom.value = '';
-                sexe.value = '';
-                dateNaissance.value = '';
-                idClub.value = '';
-                ffa.checked = false;
-                email.value = '';
-                telephone.value = '';
-            } else {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.error(message);
-                        afficherErreur('Une erreur est survenue lors de la suppression');
-                    } else if (key === 'global') {
-                        afficherErreur(message);
-                    } else { // ne doit jamais arriver
-                        afficherErreur(message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
+    const success = () => {
+        // on supprime le coureur du tableau lesCoureurs
+        const index = lesCoureurs.findIndex(c => c.licence === licence.value);
+        if (index !== -1) {
+            lesCoureurs.splice(index, 1);
         }
-    });
+        // on masque le formulaire de modification
+        formulaire.style.display = 'none';
+
+    };
+    supprimerEnregistrement('coureur', licence.value, success);
 }
-
-
-//  ------------------------------------------------------------------------------------------
-//     Traitements associés à la zone de recherche
-// -------------------------------------------------------------------------------------------
-
-
-// récupération de la balise nomR sous la forme d'un objet jQuery
-const $nomR = $('#nomR');
-// definition des paramètres du composant dans un objet javascript (cle : valeur)
-const option = {
-    // la source de données
-    data : lesCoureurs,
-    // valeur alimentant la zone d'auto-complétion
-    getValue: 'nomPrenom',
-    //	propriété décrivant le fonctionnement du composant
-    list: {
-        maxNumberOfElements: 10,
-        hideOnEmptyPhrase: true,
-        match: {
-            // limite les valeurs affichées
-            enabled: true,
-            // les noms affichés doivent commencer par les lettres saisies
-            method: (element, phrase) => element.indexOf(phrase) === 0
-        },
-        // en cas de sélection par l'utilisateur
-        onChooseEvent: () => {
-           const valeur = $nomR.getSelectedItemData().licence;
-            rechercher(valeur);
-
-        },
-        // à chaque saisie d'un caractère
-        onLoadEvent: () => {
-            nomR.style.color = '';
-            const lesValeurs = $nomR.getItems();
-            const nb = lesValeurs.length;
-            if (nb === 0) {
-                nomR.style.color = 'red';
-            } else if (nb === 1) {
-                nomR.value = lesValeurs[0].nomPrenom;
-                rechercher(lesValeurs[0].licence);
-            }
-        }
-    },
-    theme: 'round'
-};
-$nomR.easyAutocomplete(option);
-
-// contrôle des données saisies toujours après le système d'autocomplétion qui vient ajouter ses propres balises
-configurerFormulaire();
-filtrerLaSaisie('telephone', /[0-9]/);
-filtrerLaSaisie('nom', /[A-Za-z ]/);
-filtrerLaSaisie('nomR', /[A-Za-z ]/);
-filtrerLaSaisie('prenom', /[A-Za-z ]/);
 
 // Récupération des coordonnées du coureur
 function rechercher(licence) {
-
     formulaire.style.display = 'none';
+    effacerLesErreurs();
     nomR.blur();
-    $.ajax({
+    appelAjax({
         url: 'ajax/getbylicence.php',
-        method: 'POST',
         data: {
             licence: licence
         },
-        dataType: 'json',
         success: data => {
-            if (data) {
                 nomR.value = '';
                 afficher(data);
-            } else {
-                afficherErreur("Ce licencié n'est pas dans la base");
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
         }
     });
 }
@@ -362,8 +192,72 @@ function afficher(data) {
     // pour les champs optionnels la valeur null est transformée en chaine vide ''
     email.value = data.email;
     telephone.value = data.telephone;
-
 }
 
 
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
 
+// intervalle sur la date de naissance
+// La date doit être comprise entre dateMin et dateMax
+configurerDate(dateNaissance, {
+    min: dateMin,
+    max: dateMax,
+    valeur: dateMax
+});
+
+// alimentation de la zone de liste des clubs
+for (const club of lesClubs) {
+    idClub.add(new Option(club.nom, club.id));
+}
+
+// paramétrage du composant autoComplete
+const options = {
+    data: {
+        src: lesCoureurs,
+        keys: ["nomPrenom"]
+    },
+    selector: "#nomR",
+    resultItem: {
+        highlight: true,
+    },
+    theme: 'round',
+    resultsList: {
+        element: (list, data) => {
+            const info = document.createElement("p");
+            info.style.padding = "2px 2px";
+            info.style.fontStyle = "italic";
+            info.style.fontSize = "0.8em";
+            const nb = data.matches.length;
+            if (nb > 1) {
+                info.innerHTML = nb + " licenciés trouvés";
+            } else if (nb === 1) {
+                info.innerHTML = "Un licencié correspondant";
+            } else {
+                info.innerHTML = "Aucun licencié correspondant";
+            }
+            list.append(info);
+        },
+        noResults: true,
+        maxResults: 10,
+    },
+    events: {
+        input: {
+            // lorsque l'utilisateur clique sur un élément de la liste affichée
+            selection: (event) => {
+                const selection = event.detail.selection.value;
+                nom.value = selection.nomPrenom;
+                rechercher(selection.licence);
+            },
+        }
+    },
+};
+new autoComplete(options);
+
+// contrôle des données saisies toujours après le système d'autocomplétion qui vient ajouter ses propres balises
+configurerFormulaire();
+filtrerLaSaisie('telephone', /[0-9]/);
+filtrerLaSaisie('nom', /[A-Za-z ]/);
+filtrerLaSaisie('nomR', /[A-Za-z ]/);
+filtrerLaSaisie('prenom', /[A-Za-z ]/);

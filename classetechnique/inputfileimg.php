@@ -6,8 +6,8 @@ declare(strict_types=1);
  * Possibilité de définir les dimensions à respecter et de redimensionner (extraire une partie en fonction des dimensions à respecter)
  * Nécessite la bibliothèque Gumlet/ImageResize
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.2
+ * @Date : 09/07/2025
  */
 
 // chargement du composant permettant de redimensionner l'image
@@ -40,25 +40,46 @@ class InputFileImg extends InputFile
 
     public function checkValidity(): bool
     {
+        // 1. Vérification parentale : toujours en premier
         if (!parent::checkValidity()) {
             return false;
         }
 
-        if ($this->file === null) {
+        // 2. Pas de fichier ou pas de vérification de dimensions nécessaire
+        if ($this->file === null || $this->Redimensionner || ($this->Width === 0 && $this->Height === 0)) {
             return true;
         }
 
-        // contrôle éventuel des dimensions si elles sont fixées et si l'image ne doit pas être redimensionnée
-        if (!$this->Redimensionner && ($this->Width !== 0 || $this->Height !== 0)) {
-            // Récupération des dimensions de l'image
-            $lesDimensions = getimagesize($this->file['tmp_name']);
-            $width = $lesDimensions[0];
-            $height = $lesDimensions[1];
+        // 3. Récupération des dimensions de l'image
+        $imageDimensions = getimagesize($this->file['tmp_name']);
+        $width = $imageDimensions[0];
+        $height = $imageDimensions[1];
+
+        // 4. Logique de vérification des dimensions (le cœur du problème)
+
+        // Si les deux dimensions sont renseignées (non nulles)
+        if ($this->Width !== 0 && $this->Height !== 0) {
             if ($width > $this->Width || $height > $this->Height) {
                 $this->validationMessage = "Les dimensions de l'image ($width*$height) dépassent les dimensions acceptées ($this->Width*$this->Height)";
                 return false;
             }
         }
+        // Si seule la largeur est renseignée
+        elseif ($this->Width !== 0) {
+            if ($width > $this->Width) {
+                $this->validationMessage = "La largeur de l'image ($width) dépasse la largeur acceptée ($this->Width)";
+                return false;
+            }
+        }
+        // Si seule la hauteur est renseignée
+        elseif ($this->Height !== 0) {
+            if ($height > $this->Height) {
+                $this->validationMessage = "La hauteur de l'image ($height) dépasse la hauteur acceptée ($this->Height)";
+                return false;
+            }
+        }
+
+        // Si toutes les vérifications passent, l'image est valide
         return true;
     }
 
@@ -69,7 +90,6 @@ class InputFileImg extends InputFile
      */
     public function copy(): bool
     {
-        // le fichier ne peut être copié que s'il a été préalablement vérifié
         if (!$this->valide) {
             $this->validationMessage = " Le fichier doit être contrôlé avant d'être copié";
             return false;
@@ -78,39 +98,35 @@ class InputFileImg extends InputFile
         $nomFichier = $this->Value;
         $tmpName = $this->file['tmp_name'];
 
-        // adaptation des dimensions aux dimensions demandées
+        // Cas 1 : pas de redimensionnement demandé OU aucune dimension fixée
+        if (!$this->Redimensionner || ($this->Width === 0 && $this->Height === 0)) {
+            return copy($tmpName, "$this->Directory/$nomFichier");
+        }
 
-        // Si aucune contrainte sur les dimensions ou si le redimensionnement n'est pas activé, le fichier peut être copié
-        if (($this->Width === 0 && $this->Height === 0) || !$this->Redimensionner) {
-            copy($tmpName, "$this->Directory/$nomFichier");
+        try {
+            $image = new ImageResize($tmpName);
+
+            if ($this->Width > 0 && $this->Height === 0) {
+                // Seulement largeur précisée
+                if ($image->getSourceWidth() > $this->Width) {
+                    $image->resizeToWidth($this->Width);
+                }
+            } elseif ($this->Height > 0 && $this->Width === 0) {
+                // Seulement hauteur précisée
+                if ($image->getSourceHeight() > $this->Height) {
+                    $image->resizeToHeight($this->Height);
+                }
+            } else {
+                // Les deux dimensions sont précisées
+                $image->resizeToBestFit($this->Width, $this->Height);
+            }
+
+            $image->save("$this->Directory/$nomFichier");
             return true;
+        } catch (ImageResizeException $e) {
+            $this->validationMessage = "Erreur de redimensionnement : " . $e->getMessage();
+            return false;
         }
-
-        // au moins une contrainte est fixée
-        $lesDimensions = getimagesize($tmpName);
-        if ($lesDimensions[0] > $this->Width) {
-            if ($lesDimensions[1] > $this->Height) {
-                // Contrainte sur la largeur et la hauteur
-                $image = new ImageResize($tmpName);
-                $image->crop($this->Width, $this->Height, true, ImageResize::CROPCENTER);
-                $image->save("$this->Directory/$nomFichier");
-            } else {
-                // contrainte sur la largeur, mais pas la hauteur
-                $image = new ImageResize($tmpName);
-                $image->crop($this->Width, $lesDimensions[1], true, ImageResize::CROPLEFT);
-                $image->save("$this->Directory/$nomFichier");
-            }
-        } else {
-            if ($lesDimensions[1] > $this->Height) {
-                // contrainte sur la hauteur, mais pas la largeur
-                $image = new ImageResize($tmpName);
-                $image->crop($lesDimensions[0], $this->Height, true, ImageResize::CROPTOP);
-                $image->save("$this->Directory/$nomFichier");
-            } else {
-                copy($tmpName, "$this->Directory/$nomFichier");
-                return true;
-            }
-        }
-        return true;
     }
+
 }

@@ -27,11 +27,11 @@ class Projet extends Table
      */
     public static function getAll(): array
     {
-        $sql = <<<EOD
-            SELECT id, nom
-            FROM projet
+        $sql = <<<SQL
+            select id, nom
+            from projet
             order by nom;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRows($sql);
     }
@@ -43,52 +43,79 @@ EOD;
      */
     public static function getLesCompetences(int $idProjet): array
     {
-        $sql = <<<EOD
-            SELECT competence.id, concat('C.', idBloc, '.', idDomaine, '.', competence.idCompetence) as code, libelle
-            FROM competenceprojet 
+        $sql = <<<SQL
+            select competence.id, concat('C.', idBloc, '.', idDomaine, '.', competence.idCompetence) as code, libelle
+            from competenceprojet 
                  join competence on competence.id = competenceprojet.idCompetence  
             where idProjet = :idProjet
             order by libelle;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRows($sql, ['idProjet' => $idProjet]);
     }
 
+    /**
+     * retourne les id des compétences du projet
+     * @param int $idProjet
+     * @return array
+     */
+    public static function getLesIdCompetences(int $idProjet): array
+    {
+        $sql = <<<SQL
+            select idCompetence
+            from competenceprojet 
+            where idProjet = :idProjet
+            order by idCompetence;
+SQL;
+        $select = new Select();
+        return $select->getRows($sql, ['idProjet' => $idProjet]);
+    }
+
+    /**
+     * retourne un projet par son id
+     * @param int $id
+     * @return mixed
+     */
     public static function getById(int $id): mixed
     {
-        $sql = <<<EOD
-            SELECT id, nom
-            FROM projet
+        $sql = <<<SQL
+            select id, nom
+            from projet
             where id = :id;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRow($sql, ['id' => $id]);
     }
 
 
+    /**
+     * retourne un projet par son nom
+     * @param string $nom
+     * @return mixed
+     */
     public static function getByName(string $nom): mixed
     {
-        $sql = <<<EOD
-            SELECT id, nom
-            FROM projet
+        $sql = <<<SQL
+            select id, nom
+            from projet
             where nom = :nom;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRow($sql, ['nom' => $nom]);
     }
 
-
     /**
+     * Ajoute une compétence au projet
      * @param int $idProjet
      * @param int $idCompetence
      * @return void
      */
     public static function ajouterCompetence(int $idProjet, int $idCompetence): void
     {
-        $sql = <<<EOD
+        $sql = <<<SQL
         insert into competenceprojet(idProjet, idCompetence)
                     values(:idProjet, :idCompetence);
-EOD;
+SQL;
         $db = Database::getInstance();
         $curseur = $db->prepare($sql);
         $curseur->bindValue('idProjet', $idProjet);
@@ -96,13 +123,19 @@ EOD;
         $curseur->execute();
     }
 
+    /**
+     * Supprime une compétence du projet
+     * @param int $idProjet
+     * @param int $idCompetence
+     * @return void
+     */
     public static function supprimerCompetence(int $idProjet, int $idCompetence): void
     {
-        $sql = <<<EOD
+        $sql = <<<SQL
         delete from competenceprojet
         where idProjet = :idProjet
         and idCompetence = :idCompetence;   
-EOD;
+SQL;
         $db = Database::getInstance();
         $curseur = $db->prepare($sql);
         $curseur->bindValue('idProjet', $idProjet);
@@ -110,18 +143,69 @@ EOD;
         $curseur->execute();
     }
 
+    /**
+     * Supprime toutes les compétences d'un projet
+     * @param int $idProjet
+     * @return void
+     */
+    public static function supprimerToutesLesCompetences(int $idProjet): void
+    {
+        try {
+            $db = Database::getInstance();
+            $sql = "delete from competenceprojet where idProjet = :idProjet;";
+            $curseur = $db->prepare($sql);
+            $curseur->bindParam('idProjet', $idProjet);
+            $curseur->execute();
+        } catch (Exception $e) {
+            Erreur::traiterErreur($e->getMessage());
+        }
+    }
 
+    /**
+     * Ajoute toutes les compétences à un projet
+     * @param int $idProjet
+     * @return void
+     */
+    public static function ajouterToutesLesCompetences(int $idProjet): void
+    {
+        try {
+            $db = Database::getInstance();
+            // on supprime préalablement toutes les compétences
+            $sql = <<<SQL
+	        delete from competenceprojet where idProjet = :idProjet;
+SQL;
+            $curseur = $db->prepare($sql);
+            $curseur->bindParam('idProjet', $idProjet);
+            $curseur->execute();
+            // on ajoute ensuite tous les droits
+            $sql = <<<SQL
+	        insert into competenceprojet(idProjet, idCompetence) select :idProjet, id from competence where idBloc = 1;
+SQL;
+            $curseur = $db->prepare($sql);
+            $curseur->bindParam('idProjet', $idProjet);
+            $curseur->execute();
+        } catch (Exception $e) {
+            Erreur::traiterErreur($e->getMessage());
+        }
+    }
+    
+
+    /**
+     * Enregistre un projet et ses compétences en utilisant une transaction
+     * @param string $nom
+     * @param array $lesCompetences
+     * @return string
+     */
     public static function enregistrer(string $nom, array $lesCompetences): string
     {
-        // enregistrement en utilisant une transaction afin de rendre atomique l'ensemble des ordres insert
         $db = Database::getInstance();
 
         // Démarrage d'une transaction
         $db->beginTransaction();
         // ajout du projet
-        $sql = <<<EOD
+        $sql = <<<SQL
             insert into projet(nom) values(:nom);
-EOD;
+SQL;
         $curseur = $db->prepare($sql);
         $curseur->bindValue('nom', $nom);
         try {
@@ -130,14 +214,23 @@ EOD;
             $db->rollBack();
             return $e->getMessage();
         }
-// récupération de l'id attribué au projet
+        // récupération de l'id attribué au projet
         $idProjet = $db->lastInsertId();
 
-// ajout des compétences du projet
+        // ajout des compétences du projet
         foreach ($lesCompetences as $idCompetence) {
-            $sql = <<<EOD
+            // on vérifie que l'id de la compétence est un entier
+            $idCompetence = filter_var($idCompetence, FILTER_VALIDATE_INT);
+            if ($idCompetence === false) {
+                $db->rollBack();
+                return "L'identifiant de la compétence n'est pas valide";
+            }
+            // on vérifie que l'id de la compétence existe en utilisant la méthode getById de la classe Competence
+            $ligne = Competence::getById($idCompetence);
+            // on ajoute la compétence au projet : les autres contrôles sont faits par la base de données
+            $sql = <<<SQL
                 insert into competenceprojet(idProjet, idCompetence) values(:idProjet, :idCompetence);
-EOD;
+SQL;
             $curseur = $db->prepare($sql);
             $curseur->bindValue('idProjet', $idProjet);
             $curseur->bindValue('idCompetence', $idCompetence);

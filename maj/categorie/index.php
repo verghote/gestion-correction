@@ -5,14 +5,14 @@ require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
 // alimentation de l'interface :
 $titre = "Modification ou suppression d'une catégorie";
 
-// récupération des catégories pour alimenter la zone de liste
-$data = json_encode(Categorie::getListe());
+// récupération des catégories pour alimenter la zone de liste et le tableau des catégories
+$lesCategories = json_encode(Categorie::getListe());
 
-$head = <<<EOD
+$head = <<<HTML
 <script>
-    let data = $data;
+    let lesCategories = $lesCategories;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

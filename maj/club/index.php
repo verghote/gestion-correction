@@ -6,13 +6,13 @@ require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
 $titre = "Modification ou suppression d'un club";
 
 // récupération des clubs pour alimenter la zone de liste
-$data = json_encode(Club::getListe());
+$lesClubs = json_encode(Club::getListe());
 
-$head = <<<EOD
+$head = <<<HTML
 <script>
-    let data = $data;
+    let lesClubs = $lesClubs;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

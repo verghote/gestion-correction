@@ -1,0 +1,58 @@
+<div class="formulaire">
+    <div id="msg"></div>
+
+    <!-- Code -->
+    <div class="champ" style="--label-width: 80px; --input-max-width: 100px">
+        <label for="id"
+               data-bs-toggle="popover"
+               data-bs-trigger="hover"
+               data-bs-html="true"
+               data-bs-placement="top"
+               data-bs-content="Code numérique à 6 chiffres"
+               class="obligatoire">
+            Code
+        </label>
+        <input id="id"
+               type="text"
+               class="form-control"
+               required
+               minlength="6"
+               maxlength="6"
+               pattern="^[0-9]{6}$"
+               autocomplete="off">
+    </div>
+
+    <!-- Nom -->
+    <div class="champ" style="--label-width: 80px;">
+        <label for="nom"
+               data-bs-toggle="popover"
+               data-bs-trigger="hover"
+               data-bs-html="true"
+               data-bs-placement="top"
+               data-bs-content="30 Lettres non accentuées ou symboles suivants : ' - et ."
+               class="obligatoire">
+            Nom
+        </label>
+        <input id="nom"
+               type="text"
+               class="form-control"
+               required
+               maxlength="30"
+               pattern="^[A-Za-z]+([ '\-.]?[A-Za-z])*$"
+               autocomplete="off">
+    </div>
+
+
+    <!-- Photo -->
+    <div class="champ" style="--label-width: 80px;">
+        <label for="fichier" style="max-width: 100px">Photo</label>
+        <div id="cible" class="upload" style="width: 200px; height: 200px;"></div>
+        <div id="nomFichier" style="padding-left: 5px; font-size: 0.8rem;"></div>
+        <input type="file" id="fichier" accept="" style="display: none;">
+    </div>
+
+    <!-- Bouton -->
+    <div class="d-flex justify-content-evenly">
+        <button id="btnAjouter" class="btn btn-sm btn-outline-danger mt-3">✚ Ajouter</button>
+    </div>
+</div>

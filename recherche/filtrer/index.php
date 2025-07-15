@@ -7,11 +7,11 @@ $titre = "Recherche sur nom, prénom ou club";
 
 // Récupération des coureurs : licence, nom prenom, sexe, dateNaissanceFr au format fr, idCategorie, nomClub
 $data = json_encode(Coureur::getAll());
-$head = <<<EOD
+$head = <<<HTML
 <script>
     let data = $data;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

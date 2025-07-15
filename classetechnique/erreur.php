@@ -3,33 +3,29 @@ declare(strict_types=1);
 
 /**
  * Classe Erreur : Classe permettant de générer la réponse du serveur en cas d'erreur détectée
- * Utilise les classes techniques Journal et ListeNoire (table listenoire)
+ * Utilise la classe technique Journal pour journaliser les erreurs
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.3
+ * @Date : 07/07/2025
+ * Renommage de la méthode traiterErreur en traiterReponse
  */
 class Erreur
 {
     /**
-     * Réponse du serveur en cas de détection d'une erreur
+     * Réponse du serveur dans le format json suite à la détection d'une erreur
+     * Méthode à utiliser lors d'un appel ajax de type Fecth
      *
-     * Si le script a été appelé directement
-     *    La méthode redirige l'utilisateur vers la page erreur/index.php
-     *    Le message d'erreur et le script (page) à l'origine de l'erreur sont conservés dans une variable de session
-     * Si le script a été appelé par un appel Ajax
-     *    La méthode retourne le message et le type du message dans le format json
      *    Si le type n'est pas précisé, il est déduit à partir du contenu du message
+     *    C'est le cas lors d'une erreur déclenché par un trigger
+     *    Si le type est 'system', le message est enregistré dans le journal des erreurs
+     *
      * @param string $message message associé au type de l'erreur
-     * @param string|null $type [facultatif] type de l'erreur :  'global' ou 'system'
+     * @param string|null $type [facultatif] type de l'erreur : 'global' ou 'system'
      * @return void
      */
     public static function envoyerReponse(string $message, ?string $type = null): void
     {
-        // le type de l'erreur n'est pas précisé, il s'agit d'une erreur capturée dans un try catch
-        // il peut s'agir 'une erreur provenant d'un déclencheur ou d'une erreur système
-        // dans le cas d'un déclencheur, l'erreur sera traitée comme une erreur globale afin d'être affichée à l'utilisateur
         if ($type === null) {
-            // recherche de la présence d'un # qui signale un message provenant d'un déclencheur
             $messageDeclencheur = strstr($message, '#');
             if ($messageDeclencheur) {
                 $type = 'global';
@@ -44,29 +40,83 @@ class Erreur
             $message = "Une erreur s'est produite, veuillez contacter l'administrateur";
         }
 
-        // Si le script a été appelé directement
-        if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-            if (session_status() === PHP_SESSION_NONE) session_start();
-            $_SESSION['erreur'] = [];
-            $_SESSION['erreur']['page'] = $_SERVER['PHP_SELF'];
-            $_SESSION['erreur']['message'] = $message;
-            header('Location:/erreur');
-        } else {
-            $lesErreurs[$type] = $message;
-            echo json_encode(['error' => $lesErreurs], JSON_UNESCAPED_UNICODE);
-        }
+        $lesErreurs[$type] = $message;
+        echo json_encode(['error' => $lesErreurs], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     /**
-     * Rejette l'accès à une url jugée malveillante et enregistre l'ip dans la liste noire
+     * Rédirection vers la page /erreur afin d'afficher le message d'erreur dans une page
+     *
+     * Utiliser au niveau des scripts appelés directement depuis l'url
+     *    La méthode redirige l'utilisateur vers la page erreur/index.php
+     *    Le message d'erreur et le script (page) à l'origine de l'erreur sont conservés dans une variable de session
+     * @param string $message message associé au type de l'erreur
+     * @param string|null $type [facultatif] type de l'erreur :  'global' ou 'system'
      * @return void
+     */
+    public static function afficherReponse(string $message, ?string $type = null): void
+    {
+        if ($type === null) {
+            $messageDeclencheur = strstr($message, '#');
+            if ($messageDeclencheur) {
+                $type = 'global';
+                $message = substr($messageDeclencheur, 1);
+            } else {
+                Journal::enregistrer($message, 'erreur');
+                $type = 'system';
+                $message = "Une erreur inattendue s'est produite, veuillez contacter l'administrateur";
+            }
+        } elseif ($type === 'system') {
+            Journal::enregistrer($message, 'erreur');
+            $message = "Une erreur s'est produite, veuillez contacter l'administrateur";
+        }
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $_SESSION['erreur'] = [];
+        $_SESSION['erreur']['page'] = $_SERVER['PHP_SELF'];
+        $_SESSION['erreur']['message'] = $message;
+
+        header('Location:/erreur');
+        exit;
+    }
+
+    /**
+     * Appelé dans les scripts pouvant être invoqués en Ajax ou en direct
+     */
+    public static function traiterReponse(string $message, ?string $type = null): void
+    {
+        if (self::estAppelAjax()) {
+            self::envoyerReponse($message, $type);
+        } else {
+            self::afficherReponse($message, $type);
+        }
+    }
+
+    /**
+     * Détection d'un appel Ajax (fetch ou jQuery)
+     * Attention l'appel fecth doit contenir l'en-tête 'X-Requested-With' pour être reconnu
+     *            headers: {'X-Requested-With': 'XMLHttpRequest'},
+     */
+    private static function estAppelAjax(): bool
+    {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
+    /**
+     * Blocage IP et session, redirection vers la page d'erreur
      */
     public static function bloquerVisiteur(): void
     {
         $url = $_SERVER['REQUEST_URI'];
         Journal::enregistrer($url, 'menace');
+
         if (session_status() === PHP_SESSION_NONE) session_start();
+
         $_SESSION['disable'] = true;
         $_SESSION['erreur'] = [];
         $_SESSION['erreur']['message'] = "Votre requête a été jugée malveillante, Votre session a été désactivée et votre adresse IP a été enregistrée";
@@ -75,46 +125,33 @@ class Erreur
     }
 
     /**
-     * Retourne le message associé à un code HTTP
-     * @param int $codeHttp code HTTP
-     * @return string
+     * Message associé à un code HTTP
      */
-    public static function getErreurHttp($codeHttp): string
+    public static function getErreurHttp(int|string $codeHttp): string
     {
         switch ($codeHttp) {
             case 400:
-                $message = "Requête incorrecte";
-                break;
+                return "Requête incorrecte";
             case 401:
-                $message = "Erreur d'authentification";
-                break;
+                return "Erreur d'authentification";
             case 403:
-                $message = "Demande interdite par les règles administratives. Veuillez vous assurer que votre demande comporte un en-tête User-Agent.";
-                break;
+                return "Demande interdite par les règles administratives. Veuillez vous assurer que votre demande comporte un en-tête User-Agent.";
             case 404:
-                $message = "Page non trouvée";
-                break;
+                return "Page non trouvée";
             case 405:
-                $message = "Méthode non autorisée";
-                break;
+                return "Méthode non autorisée";
             case 408:
-                $message = "Temps d'attente d'une requête dépassé";
-                break;
+                return "Temps d'attente d'une requête dépassé";
             case 500:
-                $message = "Erreur interne du serveur";
-                break;
+                return "Erreur interne du serveur";
             case 502:
-                $message = "Mauvaise passerelle";
-                break;
+                return "Mauvaise passerelle";
             case 503:
-                $message = "Service indisponible";
-                break;
+                return "Service indisponible";
             case 504:
-                $message = "Temps d'attente de la passerelle dépassé";
-                break;
+                return "Temps d'attente de la passerelle dépassé";
             default:
-                $message = "Erreur HTTP : " . $codeHttp;
+                return "Erreur HTTP : " . $codeHttp;
         }
-        return $message;
     }
 }

@@ -6,8 +6,8 @@ declare(strict_types=1);
  * Cette classe est une classe abstraite donc non instanciable.
  * Elle met en facteur tous les attributs et toutes les méthodes communes aux classes dérivées
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.4
+ * @Date : 07/07/2025
  */
 abstract class Table
 {
@@ -108,7 +108,7 @@ abstract class Table
             }
             $curseur->execute();
         } catch (Exception $e) {
-            Erreur::envoyerReponse($sql . " : " . $e->getMessage());
+            Erreur::traiterReponse($sql . " : " . $e->getMessage());
         }
     }
 
@@ -213,15 +213,15 @@ abstract class Table
         try {
             // vérification de l'id et récupération éventuelle du nom du fichier associé à l'enregistrement
             if (isset($this->columns['fichier'])) {
-                $sql = <<<EOD
+                $sql = <<<SQL
                 select fichier from  $this->tableName
                 where $this->idName = :id;
-EOD;
+SQL;
             } else {
-                $sql = <<<EOD
+                $sql = <<<SQL
                 Select 1 from  $this->tableName
                 where $this->idName = :id;
-EOD;
+SQL;
             }
             $curseur = $this->db->prepare($sql);
             $curseur->bindValue('id', $id);
@@ -229,14 +229,14 @@ EOD;
             $ligne = $curseur->fetch();
             $curseur->closeCursor();
             if (!$ligne) {
-                Erreur::envoyerReponse("Enregistrement inexistant.", 'global');
+                Erreur::traiterReponse("Enregistrement inexistant.", 'global');
             }
 
             // suppression
-            $sql = <<<EOD
+            $sql = <<<SQL
             delete from  $this->tableName
             where $this->idName = :id;
-EOD;
+SQL;
 
             $curseur = $this->db->prepare($sql);
             $curseur->bindValue('id', $id);
@@ -250,7 +250,7 @@ EOD;
             }
 
         } catch (Exception $e) {
-            Erreur::envoyerReponse($e->getMessage());
+            Erreur::traiterReponse($e->getMessage());
         }
     }
 
@@ -261,11 +261,11 @@ EOD;
      */
     protected function existe($id): bool
     {
-        $sql = <<<EOD
+        $sql = <<<SQL
                 Select 1 
                 from  $this->tableName
                 where $this->idName = :id;
-EOD;
+SQL;
         $curseur = $this->db->prepare($sql);
         $curseur->bindValue('id', $id);
         $curseur->execute();
@@ -285,7 +285,7 @@ EOD;
         // Alimentation de la valeur des objets Input concernés
         foreach ($lesValeurs as $cle => $valeur) {
             if (!isset($this->columns[$cle])) {
-                Erreur::envoyerReponse("Requête mal formulée : colonne $cle inexistante.", 'global');
+                Erreur::traiterReponse("Requête mal formulée : colonne $cle inexistante.", 'global');
             } else {
                 $this->columns[$cle]->Value = $valeur;
             }
@@ -311,15 +311,15 @@ EOD;
         $set = substr($set, 0, -2);
 
         if (!self::existe($id)) {
-            Erreur::envoyerReponse("Enregistrement inexistant.", 'global');
+            Erreur::traiterReponse("Enregistrement inexistant.", 'global');
         }
 
         //  Requête de mise à jour
-        $sql = <<<EOD
+        $sql = <<<SQL
             update  $this->tableName
              set $set
              where $this->idName = '$id';
-EOD;
+SQL;
         $this->prepareAndExecute($sql);
     }
 
@@ -337,35 +337,35 @@ EOD;
             // contrôle sur la colonne : La colonne doit faire partie des colonnes modifiables de la table
             $this->listOfColumns->Value = $colonne;
             if (!$this->listOfColumns->checkValidity()) {
-                Erreur::envoyerReponse("La colonne $colonne n'est pas modifiable.", 'global');
+                Erreur::traiterReponse("La colonne $colonne n'est pas modifiable.", 'global');
             }
 
             // contrôle de l'identifiant
             if (!self::existe($id)) {
-                Erreur::envoyerReponse("L'enregistrement à modifier n'existe pas.", 'global');
+                Erreur::traiterReponse("L'enregistrement à modifier n'existe pas.", 'global');
             }
 
             // contrôle de la valeur à l'aide de l'objet input associé dans la classe
             $input = $this->columns[$colonne];
             $input->Value = $valeur;
             if (!$input->checkValidity()) {
-                Erreur::envoyerReponse("La valeur pour la colonne $colonne n'est pas acceptée : " . $input->getValidationMessage(), 'global');
+                Erreur::traiterReponse("La valeur pour la colonne $colonne n'est pas acceptée : " . $input->getValidationMessage(), 'global');
             }
             // modification dans la base
             // réalisation de la modification
 
-            $sql = <<<EOD
+            $sql = <<<SQL
             update  $this->tableName
              set $colonne= :valeur
              where $this->idName = :id;
-EOD;
+SQL;
             $curseur = $this->db->prepare($sql);
             $curseur->bindValue('valeur', $valeur);
             $curseur->bindValue('id', $id);
 
             $curseur->execute();
         } catch (Exception $e) {
-            Erreur::envoyerReponse($e->getMessage());
+            Erreur::traiterReponse($e->getMessage());
         }
     }
 
@@ -380,38 +380,38 @@ EOD;
         try {
             // contrôle de la colonne
             if (!isset($this->columns[$colonne])) {
-                Erreur::envoyerReponse("La colonne $colonne n'existe pas.", 'global');
+                Erreur::traiterReponse("La colonne $colonne n'existe pas.", 'global');
             }
 
             // contrôle de l'identifiant
-            $sql = <<<EOD
-	        SELECT 1
-            FROM  $this->tableName
+            $sql = <<<SQL
+	        select 1
+            from  $this->tableName
             where $this->idName = :id;
-EOD;
+SQL;
             $curseur = $this->db->prepare($sql);
             $curseur->bindValue('id', $id);
             $curseur->execute();
             $ligne = $curseur->fetch();
             $curseur->closeCursor();
             if (!$ligne) {
-                Erreur::envoyerReponse("L'enregistrement à modifier n'existe pas.", 'global');
+                Erreur::traiterReponse("L'enregistrement à modifier n'existe pas.", 'global');
             }
 
             // modification dans la base
             // réalisation de la modification
 
-            $sql = <<<EOD
+            $sql = <<<SQL
             update  $this->tableName
              set $colonne= null
              where $this->idName = :id;
-EOD;
+SQL;
             $curseur = $this->db->prepare($sql);
             $curseur->bindValue('id', $id);
 
             $curseur->execute();
         } catch (Exception $e) {
-            Erreur::envoyerReponse($e->getMessage());
+            Erreur::traiterReponse($e->getMessage());
         }
     }
 }

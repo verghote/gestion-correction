@@ -1,48 +1,57 @@
 "use strict";
 
-/* global data, Tabulator */
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
 
-// colonnes de data : id, nom, ageMin, ageMax, dateMax, dateMin
-// colonne du tableau affiché : Code, Nom, Âge, Année de naissance,
+/*global lesCategories, html2pdf */
+const lesLignes = document.getElementById('lesLignes');
+const btnPdf = document.getElementById('btnPdf');
 
-// application du composant tabulator
-let options = {
-    data: data,
-    layout: "fitDataTable",
-    columns: [
-        {
-            title: 'Code',
-            field: 'id',
-            hozAlign: "center",
-            headerHozAlign: "center"
-        },
-        {
-            title: 'Nom',
-            field: 'nom'
-        },
-        {
-            title: 'Âge',
-            field: 'age',
-            hozAlign: "center",
-            headerHozAlign: "center"
-        },
-        {
-            title: 'Année de naissance',
-            field: 'annee',
-            hozAlign: "center",
-            headerHozAlign: "center"
-        }
-    ],
-    tooltips: true,
-    movableColumns: true,
-    resizableRows: true,
-    initialSort: [
-        {column: 'id', dir: 'asc'}
-    ],
-    rowFormatter: function (row) {
-        row.getElement().style.backgroundColor = "#FFF";
-    },
-};
-new Tabulator('#tableau', options);
+// -----------------------------------------------------------------------------------
+// procédures évènementielles
+// -----------------------------------------------------------------------------------
+btnPdf.addEventListener("click", () => {
+    const element = document.getElementById("pdfContent");
+
+    const opt = {
+        margin:       0.5,
+        filename:     'categories.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+});
+
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+// affichage de la liste des catégories
+for (const categorie of lesCategories) {
+    const tr = lesLignes.insertRow();
+    tr.style.verticalAlign = 'middle';
+
+    // Colonne : Catégorie
+    tr.insertCell().innerText = categorie.nom;
+
+    // Colonne : Code
+    tr.insertCell().innerText =  categorie.id;
+
+    // Colonne : Âge entre (centré)
+    let td = tr.insertCell();
+    td.innerText = categorie.age;
+    td.style.textAlign = 'center';
+
+    // Colonne : Né(e) entre (centré)
+    td = tr.insertCell();
+    td.innerText = categorie.annee;
+    td.style.textAlign = 'center';
+    td.classList.add('masquer');
+}
+
 
 

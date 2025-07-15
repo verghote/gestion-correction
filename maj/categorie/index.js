@@ -1,184 +1,217 @@
 ﻿"use strict";
 
-/* global data */
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
+import {modifierEnregistrement, supprimerEnregistrement} from "/composant/fonction/ajax.js";
+import {confirmer, afficherToast, afficherSousLeChamp} from '/composant/fonction/afficher.js';
 import {
     configurerFormulaire,
     donneesValides,
-    filtrerLaSaisie,
-    confirmer,
-    afficherErreurSaisie,
-    afficherSucces,
-    afficherErreur,
-    afficherDansConsole,
-    retournerVersApresConfirmation,
-    ucWord,
-    donneesModifiees, genererMessage
-} from 'https://verghote.github.io/composant/fonction.js';
+    effacerLesErreurs,
+    filtrerLaSaisie
+} from "/composant/fonction/controle.js";
+import {ucFirst} from "/composant/fonction/format.js";
+import {comparerSansAccentEtSansCasse} from "../../composant/fonction/util";
+import { initialiserEtapes } from '/composant/fonction/etape.js';
+
+
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+
+/* global lesCategories */
 
 // objet global contenant les informations sur la catégorie sélectionnée
-let element;
+let categorie = {};
 
-// récupération des éléments de l'interface
 const idR = document.getElementById('idR');
-
 const nom = document.getElementById('nom');
 const ageMin = document.getElementById('ageMin');
 const ageMax = document.getElementById('ageMax');
 const nb = document.getElementById('nb');
 const msg = document.getElementById('msg');
-
 const btnModifier = document.getElementById('btnModifier');
 const btnSupprimer = document.getElementById('btnSupprimer');
 
-configurerFormulaire(true);
-filtrerLaSaisie('nom', /[A-Za-z0-9 ]/);
-filtrerLaSaisie('ageMin', /[0-9]/);
-filtrerLaSaisie('ageMax', /[0-9]/);
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
 // sur le changement de catégorie, il faut récupérer les informations de la catégorie
 idR.onchange = charger;
 
 // demande de modification d'une catégorie
 btnModifier.onclick = () => {
-    nom.value = ucWord(nom.value.trim());
-    if ( donneesModifiees(element) && donneesValides()) {
-        modifier();
+
+    // effacer les anciens messages d'erreur
+    effacerLesErreurs();
+
+    nom.value = ucFirst(nom.value.trim());
+    if (donneesValides()) {
+        let valide = true;
+        // const min = parseInt(ageMin.value);
+        // const max = parseInt(ageMax.value);
+        const min = ageMin.valueAsNumber;
+        const max = ageMax.valueAsNumber;
+        // vérification de l'unicité du nom
+        if (!estUnique(nom.value)) {
+            afficherSousLeChamp('nom', "Le nom de la catégorie doit être unique");
+            valide = false;
+        }
+        // vérification de l'intervale d'âge
+        if (min >= max) {
+            afficherSousLeChamp('ageMin', "L'âge minimum doit être inférieur à l'âge maximum");
+            valide = false;
+        } else {
+            // vérification de la plage d'âge
+            const id = idR.value;
+            if (!plageValide(id, min, max)) {
+                afficherSousLeChamp('ageMin', "La plage d'âge doit être cohérente avec les autres catégories");
+                valide = false;
+            }
+        }
+        if (valide) {
+            modifier();
+        }
     }
 };
 
 // demande de suppression  de la catégorie
-btnSupprimer.onclick =  () => confirmer(supprimer);
+btnSupprimer.onclick = () => confirmer(supprimer);
 
-// alimentation de la zone de liste des catégories
-for (const element of data) {
+
+/**
+ * Charge les informations de la catégorie sélectionnée
+ */
+function charger() {
+    categorie = lesCategories.find(cat => cat.id === idR.value);
+    afficher(categorie);
+}
+
+
+/**
+ * Affiche les informations de la catégorie dans les champs du formulaire
+ * @param {object} categorie
+ */
+function afficher(categorie) {
+    nom.value = categorie.nom;
+    ageMin.value = categorie.ageMin;
+    ageMax.value = categorie.ageMax;
+    nb.innerText = categorie.nb + " licencié(s) dans cette catégorie";
+    // activation / désactivation du bouton
+    btnSupprimer.style.display = categorie.nb === 0 ? 'block' : 'none';
+
+    // alimentation des balises span de class 'nom' avec le nom de la catégorie
+    for(const span of document.querySelectorAll('.nom')) {
+        span.textContent = categorie.nom;
+    }
+
+    // vider l'éventuel message d'erreur
+    msg.innerText = '';
+}
+
+/**
+ * Vérifie si le nom de la catégorie est unique
+ * Par sécurité, nous utilisons une comparaison insensible aux accents et à la casse
+ * @param {string} nom
+ * @returns {boolean}
+ */
+function estUnique(nom) {
+    return lesCategories.findIndex(x => comparerSansAccentEtSansCasse(x.nom, nom) && x.id !== categorie.id) === -1;
+}
+
+/**
+ * Vérifie si la plage d'âge est valide et ne chevauche pas les autres catégories
+ * Il n'y a pas chevauchement si max est avant ageMin ou min est après ageMax (il suffit d'inverser la condition pour trouver un chevauchement)
+ *  @param {number} id id de la catégorie actuellement affichée
+ * @param {number} min
+ * @param {number} max
+ * @returns {boolean}
+ */
+function plageValide(id, min, max) {
+    return !lesCategories.some(x => x.id !== id && !(max < x.ageMin || min > x.ageMax));
+}
+
+/**
+ * Enregistre les modifications de la catégorie
+ */
+function modifier() {
+    // transmission des valeus modifiées
+    const lesValeurs = {};
+    if (nom.value !== categorie.nom) {
+        lesValeurs.nom = nom.value;
+    }
+    if (ageMin.value !== categorie.ageMin) {
+        lesValeurs.ageMin = ageMin.value;
+    }
+    if (ageMax.value !== categorie.ageMax) {
+        lesValeurs.ageMax = ageMax.value;
+    }
+    if (Object.keys(lesValeurs).length === 0) {
+        afficherToast("Aucune modification à enregistrer", "info");
+        return;
+    }
+    // fonction de rappel en cas de succès dela modification
+    const success = () => {
+        // mise à jour du tableau
+        const index = lesCategories.findIndex(x => x.id === categorie.id);
+        lesCategories[index].nom = nom.value;
+        lesCategories[index].ageMin = ageMin.valueAsNumber;
+        lesCategories[index].ageMax = ageMax.valueAsNumber;
+
+        // modifier le libellé de la zone de liste
+        idR.options[idR.selectedIndex].text = nom.value;
+
+        // modifier le libellé des balises span de class 'nom' avec le nom de la catégorie
+        for(const span of document.querySelectorAll('.nom')) {
+            span.textContent = nom.value;
+        }
+
+    };
+
+    // on modifie l'enregistrement
+    modifierEnregistrement('categorie', idR.value, lesValeurs, success);
+}
+
+/**
+ * Demande de suppression de la catégorie actuellement affichée
+ */
+function supprimer() {
+    const success = () => {
+        // on supprime la catégorie dans le tableau (facultatif)
+        const index = lesCategories.findIndex(x => x.id === categorie.id);
+        if (index !== -1) {
+            lesCategories.splice(index, 1);
+        }
+        // mise à jour de la zone de liste idR
+        idR.remove(idR.selectedIndex);
+        // charger les données de la catégorie suivante
+        charger();
+    };
+    supprimerEnregistrement('categorie', categorie.id, success);
+}
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+configurerFormulaire();
+// filtrerLaSaisie('nom', /[A-Za-z0-9 ]/);
+filtrerLaSaisie('ageMin', /[0-9]/);
+filtrerLaSaisie('ageMax', /[0-9]/);
+
+
+// Tranformation en valeur numérique pour ageMin et AgeMax et alimentation de la zone de liste des catégories
+// cela évitera les erreurs de comparaison
+for (const element of lesCategories) {
+    element.ageMin = parseInt(element.ageMin);
+    element.ageMax = parseInt(element.ageMax);
     idR.add(new Option(element.nom + ' (' + element.id + ')', element.id));
 }
 
 // charger les informations de la catégorie actuellement sélectionnée
 charger();
 
-// charger et afficher les informations sur la catégorie
-function charger() {
-    $.ajax({
-        url: 'ajax/getbyid.php',
-        method: 'POST',
-        data: {
-            id: idR.value
-        },
-        dataType: "json",
-        success: data => {
-            if (data.error) {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (key === 'global') {
-                        afficherErreur(message);
-                    } else {
-                        afficherErreurSaisie(key, message);
-                    }
-                }
-            } else {
-                element = data;
-                afficher(data);
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
-
-function afficher(data) {
-    nom.value = data.nom;
-    ageMin.value = data.ageMin;
-    ageMax.value = data.ageMax;
-    nb.innerText = data.nb + " licencié(s) dans cette catégorie";
-    // activation / désactivation du bouton
-    btnSupprimer.style.display = data.nb === 0 ? 'block' : 'none';
-}
-
-function modifier() {
-    // transmission des paramètres
-    const lesValeurs = {};
-    if (nom.value !== element.nom) {
-        lesValeurs.nom = nom.value;
-    }
-    if (ageMin.value !== element.ageMin) {
-        lesValeurs.ageMin = ageMin.value;
-    }
-    if (ageMax.value !== element.ageMax) {
-        lesValeurs.ageMax = ageMax.value;
-    }
-    $.ajax({
-        url: '/ajax/modifier.php',
-        method: 'POST',
-        async: false,
-        data: {
-            table : 'categorie',
-            id: idR.value,
-            lesValeurs : JSON.stringify(lesValeurs)
-        },
-        dataType: "json",
-        success: data => {
-            if (data.success) {
-                afficherSucces("Modification enregistrée");
-                // modifier le libellé de la zone de liste
-                idR.options[idR.selectedIndex].text = nom.value.toUpperCase();
-            } else {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (key === 'global') {
-                        msg.innerHTML = genererMessage(message);
-                    } else {
-                        afficherErreurSaisie(key, message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
-
-function supprimer() {
-    $.ajax({
-        url: '/ajax/supprimer.php',
-        type: 'POST',
-        async: false,
-        data: {
-            table : 'categorie',
-            id: idR.value
-        },
-        dataType: "json",
-        success: (data) => {
-            if (data.success) {
-                retournerVersApresConfirmation("Catégorie supprimée", "/");
-            } else {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.error(message);
-                        afficherErreur('Une erreur est survenue lors de la suppression');
-                    } else if (key === 'global') {
-                        afficherErreur(message);
-                    } else { // ne doit jamais arriver
-                        afficherErreur(message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
+initialiserEtapes();

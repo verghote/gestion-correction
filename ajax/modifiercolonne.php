@@ -1,15 +1,13 @@
 <?php
-declare(strict_types=1);
-
 // activation du chargement dynamique des ressources
-require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
+require $_SERVER['DOCUMENT_ROOT'] . '/include/autoload.php';
 
 // vérification de la transmission des données attendues
 if (!Std::existe('table', 'id', 'colonne', 'valeur') ) {
     Erreur::envoyerReponse('Tous les paramètres attendus ne sont pas transmis', 'global');
 }
 
-// récupération des données
+// récupération des données ; ne pas encoder avec htmlspecialchar sinon pb avec checkvalidity (' par exemple)
 $id = $_POST["id"];
 $valeur = $_POST["valeur"];
 $colonne = $_POST["colonne"];
@@ -22,7 +20,6 @@ if (!class_exists($table)) {
 
 // Réalisation de la modification en mode colonne
 $table = new $table();
-$table->modifierColonne($colonne, $valeur, $id);
 
-// Réponse du serveur
+$table->modifierColonne($colonne, $valeur, $id);
 echo json_encode(['success' => "Opération réalisée avec succès"]);

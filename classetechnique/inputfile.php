@@ -4,8 +4,8 @@ declare(strict_types=1);
 /**
  * Classe InputFile : assure les opérations de téléversement d'un fichier
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.3
+ * @Date : 08/07/2025
  */
 class InputFile extends Input
 {
@@ -58,7 +58,7 @@ class InputFile extends Input
     public int $MaxSize;
 
     // Répertoire sur le serveur dans lequel le fichier téléchargé sera copié
-    public $Directory;
+    protected $Directory;
 
     // Drapeau indiquant si l'objet est valide et peut donc être copié
     // membre initialisé dans le constructeur, modifiée dans la méthode checkValidity et utilisé par sécurité dans la méthode copy
@@ -76,7 +76,15 @@ class InputFile extends Input
         $this->Require = $lesParametres['require'] ?? true;
         $this->Types = $lesParametres['types'] ?? ["application/force-download", "application/pdf"];
         $this->Value = null;
-        $this->file = $_FILES['fichier'] ?? null;
+        $inputName = $lesParametres['inputName'] ?? 'fichier';
+        $this->file = $_FILES[$inputName] ?? null;
+        if (defined('RACINE') && isset($lesParametres['repertoire'])) {
+            $this->Directory = RACINE . $lesParametres['repertoire'];
+        } elseif (isset($lesParametres['directory'])) {
+            $this->Directory = $lesParametres['directory'];
+        } else {
+            throw new InvalidArgumentException("Répertoire de destination non défini.");
+        }
     }
 
     public function fichierTransmis(): bool
@@ -199,13 +207,13 @@ class InputFile extends Input
             // Ajout éventuel d'un suffixe sur le nom du fichier en cas de doublon
             $nom = pathinfo($nomFichier, PATHINFO_FILENAME);
             $i = 1;
-            while (file_exists("$this->Directory/$nomFichier")) {
+            while (is_file("$this->Directory/$nomFichier")) {
                 $nomFichier = "$nom($i).$extension";
                 $i++;
             }
         } else {
             //  le fichier ne doit pas déjà être présent dans le répertoire
-            if ($this->Mode === 'insert' && file_exists($this->Directory . '/' . $nomFichier)) {
+            if ($this->Mode === 'insert' && is_file($this->Directory . '/' . $nomFichier)) {
                 $this->validationMessage = "Ce fichier est déjà présent sur le serveur : $nomFichier";
                 return false;
             }

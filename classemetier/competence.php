@@ -10,11 +10,11 @@ class Competence extends Table
      */
     public static function getAll(): array
     {
-        $sql = <<<EOD
-            SELECT concat('C.', idBloc, '.', idDomaine, '.', idCompetence) as code, libelle
-            FROM competence
+        $sql = <<<SQL
+            select concat('C.', idBloc, '.', idDomaine, '.', idCompetence) as code, libelle
+            from competence
             order by code;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRows($sql);
     }
@@ -28,11 +28,11 @@ EOD;
     public static function getLesCompetences(string $idBloc, string $idDomaine = '*'): array
     {
         $lesParametres['idBloc'] = $idBloc;
-        $sql = <<<EOD
-            SELECT id, concat('C.', idBloc, '.', idDomaine, '.', idCompetence) as code, libelle
-            FROM competence
+        $sql = <<<SQL
+            select id, concat('C.', idBloc, '.', idDomaine, '.', idCompetence) as code, libelle
+            from competence
             where idBloc = :idBloc
-EOD;
+SQL;
         // prise en compte du domaine si l'idDomaine n'a pas la valeur par défaut
         if ($idDomaine !== '*') {
             $sql .= " and  idDomaine = :idDomaine";
@@ -49,11 +49,11 @@ EOD;
      */
     public static function getLesBlocs(): array
     {
-        $sql = <<<EOD
-            SELECT id, libelle
-            FROM bloc
+        $sql = <<<SQL
+            select id, libelle
+            from bloc
             order by libelle;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRows($sql);
     }
@@ -65,12 +65,12 @@ EOD;
      */
     public static function getLesDomaines(int $idBloc): array
     {
-        $sql = <<<EOD
-            SELECT idDomaine, libelle
-            FROM domaine
-            Where idBloc = :idBloc
+        $sql = <<<SQL
+            select idDomaine, libelle
+            from domaine
+            where idBloc = :idBloc
             order by libelle;   
-EOD;
+SQL;
         $select = new Select();
         return $select->getRows($sql, ['idBloc' => $idBloc]);
     }
@@ -78,11 +78,11 @@ EOD;
 
     public static function getById(int $id): mixed
     {
-        $sql = <<<EOD
-            SELECT id, libelle
-            FROM competence
+        $sql = <<<SQL
+            select id, libelle, idBloc, idDomaine, idCompetence
+            from competence
             where id = :id;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRow($sql, ['id' => $id]);
     }

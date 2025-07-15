@@ -4,7 +4,6 @@ declare(strict_types=1);
  * Classe Std : Classe statique permettant l'affichage le contrôle et la conversion des données
  * @Author : Guy Verghote
  * @Version : 2025.1
- * @Date : 03/05/2025
  */
 
 class Std

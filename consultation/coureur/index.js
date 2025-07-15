@@ -1,89 +1,100 @@
 "use strict";
 
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-/* global data, Tabulator  */
+import {ucWord} from "/composant/fonction/format.js";
+import {activerTri } from "/composant/fonction/tableau.js";
 
-// Propriété de l'objet data : licence, nom, prenom, sexe, dateNaissanceFr, idCategorie, nomClub
-// Colonne du tableau : Licence, Nom, Prénom, Sexe, Date de naissance, Catégorie, Club
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
 
-// Initialisation du composant Tabulator
-let options = {
-    data: data,
-    layout: "fitColumns",
-    responsiveLayout: "hide", // Active la gestion des colonnes en mode responsive
-    columns: [
-        {
-            title: 'Licence',
-            field: 'licence',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            headerFilter: "input",
-            minWidth: 100,
-            responsive: 1
-        },
-        {
-            title: 'Nom',
-            field: 'nom',
-            headerFilter: "input",
-            minWidth: 150,
-        },
-        {
-            title: 'Prénom',
-            field: 'prenom',
-            headerFilter: "input",
-            minWidth: 150,
-        },
-        {
-            title: 'Sexe',
-            field: 'sexe',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            headerFilter: "input",
-            minWidth: 50,
-            responsive: 4 // Priorité de masquage (2 = masqué après les colonnes ayant priorité 1)
-        },
-        {
-            title: 'Né(e) le',
-            field: 'dateNaissanceFr',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            headerFilter: "input",
-            minWidth: 100,
-            responsive: 3 // Priorité de masquage
-        },
-        {
-            title: 'Cat.',
-            field: 'idCategorie',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            headerFilter: "input",
-            minWidth: 70,
-            responsive: 2
-        },
-        {
-            title: 'Club',
-            field: 'nomClub',
-            headerFilter: "input",
-            minWidth: 150,
-            responsive: 2 // Priorité de masquage
+/* global lesCoureurs */
+
+const lesLignes = document.getElementById('lesLignes');
+const nb = document.getElementById('nb');
+const search = document.getElementById('search');
+
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
+
+search.oninput = () => afficher(lesCoureurs);
+
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
+
+function afficher(lesCoureurs) {
+    const valeur = search.value.toLowerCase();
+
+    lesLignes.innerHTML = '';
+    let count = 0;
+
+    for (const coureur of lesCoureurs) {
+        // Filtrage direct, sans créer un nouveau tableau
+        if (
+            valeur &&
+            !coureur.licence.toLowerCase().includes(valeur) &&
+            !coureur.nomPrenom.toLowerCase().includes(valeur) &&
+            !coureur.nomClub.toLowerCase().includes(valeur)
+        ) {
+            continue; // on passe au suivant
         }
-    ],
-    tooltips: true,
-    pagination: 'local',
-    paginationSize: 20,
-    paginationSizeSelector: [20, 50, 100],
-    movableColumns: true,
-    initialSort: [
-        {column: 'licence', dir: 'asc'}
-    ],
-    rowFormatter: function (row) {
-        row.getElement().style.backgroundColor = "#FFF";
-    },
-};
-let table = new Tabulator('#tableau', options);
 
-// gestion d'événement sur les boutons d'export
-document.getElementById("export-csv").onclick = () => table.download("csv", "data.csv");
+        count++;
 
-document.getElementById("export-json").onclick = () => table.download("json", "data.json");
+        const tr = lesLignes.insertRow();
+        tr.style.verticalAlign = 'middle';
+        tr.id = coureur.id;
+
+        let td;
+
+        td = tr.insertCell();
+        td.innerText = coureur.licence;
+        td.style.textAlign = 'center';
+
+        td = tr.insertCell();
+        td.innerText = ucWord(coureur.nomPrenom);
+        td.style.textAlign = 'left';
+
+        td = tr.insertCell();
+        td.innerText = coureur.sexe;
+        td.style.textAlign = 'center';
+
+        td = tr.insertCell();
+        td.innerText = coureur.dateNaissanceFr;
+        td.style.textAlign = 'center';
+
+        td = tr.insertCell();
+        td.innerText = coureur.idCategorie;
+        td.style.textAlign = 'center';
+
+        td = tr.insertCell();
+        td.innerText = ucWord(coureur.nomClub);
+        td.style.textAlign = 'left';
+    }
+
+    nb.innerText = count;
+}
+
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+afficher(lesCoureurs);
+
+activerTri({
+    idTable: "leTableau",
+    getData: () => lesCoureurs,
+    afficher: afficher,
+    triInitial: {
+        colonne: 'licence',
+        ordre: "asc"
+    }
+});
+
 

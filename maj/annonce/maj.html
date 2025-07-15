@@ -1,34 +1,23 @@
-<div class="formulaire"  style="max-width: 56rem">
+<div class="formulaire">
     <div id="msg"></div>
-    <div class="row mb-3">
-        <div class="col-sm-6 ">
-            <label for="date" class="obligatoire col-form-label">Date de votre épreuve</label>
-            <input id='date'
-                   type="date"
-                   style="width: 175px"
-                   class="form-control"
-                   required
-            >
-        </div>
-        <div class="col-sm-6">
-            <label for="nom" class="obligatoire col-form-label">Nom de votre épreuve</label>
-            <input id='nom'
-                   type="text"
-                   class="form-control"
-                   required
-                   pattern="^[0-9A-Za-zÀÇÈÉÊàáâçèéêëî](.*[0-9A-Za-zÀÇÈÉÊàáâçèéêëî!])*$"
-                   maxlength="100"
-                   minlength="8"
-            >
-        </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col">
-            <label class='obligatoire col-form-label' for="description">Description de l'épreuve </label>
-            <!-- Remarque class style et placeholder sont inutiles puisquei le champ sera masqué par ckEditor -->
-            <textarea id='description' required></textarea>
-        </div>
-    </div>
+    <label for="date" class="obligatoire col-form-label">Date de votre épreuve</label>
+    <input id='date'
+           type="date"
+           style="width: 175px"
+           class="form-control"
+           required
+    >
+    <label for="nom" class="obligatoire col-form-label">Nom de votre épreuve</label>
+    <input id='nom'
+           type="text"
+           class="form-control"
+           required
+           pattern="^[0-9A-Za-zÀÇÈÉÊàáâçèéêëî](.*[0-9A-Za-zÀÇÈÉÊàáâçèéêëî!])*$"
+           maxlength="100"
+           minlength="8"
+    >
+    <label class='obligatoire col-form-label' for="description">Description de l'épreuve </label>
+    <textarea id='description' required></textarea>
 
     <div class="d-flex justify-content-evenly">
         <button id="btnModifier" class="btn btn-sm btn-danger mt-3">Modifier</button>

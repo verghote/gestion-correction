@@ -8,12 +8,12 @@ $titre = "Recherche sur plusieurs critères";
 $lesCategories = json_encode(Categorie::getListe());
 $lesClubs = json_encode(Club::getListe());
 
-$head = <<<EOD
+$head = <<<HTML
 <script>
        let lesCategories = $lesCategories;
        let lesClubs = $lesClubs;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

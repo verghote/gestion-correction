@@ -36,10 +36,5 @@ if (!preg_match("/^[MF*]$/", $sexe)) {
     Erreur::envoyerReponse("Le sexe n'est pas conforme", 'global');
 }
 
-// vérification de la sélection d'au moins 1 critère
-if ($idCategorie == '*' && $idClub == '*' && $sexe == '*') {
-    Erreur::envoyerReponse("Sélectionnez au moins 1 critère", 'global');
-}
-
 // récupération et envoi des licenciés dans cette catégorie
 echo json_encode(Coureur::getBySexeClubCategorie($sexe, $idClub, $idCategorie));

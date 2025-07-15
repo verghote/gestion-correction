@@ -4,8 +4,8 @@ declare(strict_types=1);
 /**
  * Classe InputUrl : contrôle une URL
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.2
+ * @Date : 14/06/2025
  */
  
 class InputUrl extends Input
@@ -46,16 +46,8 @@ class InputUrl extends Input
      */
     private function verifyUrlExistence(string $url): bool
     {
-        $f = @fopen($url, "r");
-        if ($f) {
-            fclose($f);
-            return true;
-        }
-        $f = @fopen($url . "/index.php", "r");
-        if ($f) {
-            fclose($f);
-            return true;
-        }
-        return false;
+        $headers = @get_headers($url);
+        return $headers && strpos($headers[0], '200') !== false;
     }
+
 }

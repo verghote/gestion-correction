@@ -5,8 +5,8 @@ declare(strict_types=1);
  * Classe permettant de gérer toutes les requêtes de consultation de la base de données
  *
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.3
+ * @Date : 08/07/2025
  */
 class Select
 {
@@ -88,15 +88,13 @@ class Select
                 $curseur = $this->db->query($sql);
             } else {
                 $curseur = $this->db->prepare($sql);
-                foreach ($lesParametres as $cle => $valeur) {
-                    $curseur->bindValue($cle, $valeur);
-                }
-                $curseur->execute();
+                $curseur->execute($lesParametres);
             }
             return $curseur;
         } catch (PDOException $e) {
-            Erreur::envoyerReponse(self::MSG_ERREUR . $e->getMessage(), 'system');
-            // envoyerReponse appelle exit()
+            Erreur::traiterReponse(self::MSG_ERREUR . $e->getMessage(), 'system');
+            // Code inaccessible, mais nécessaire pour respecter la signature de la méthode
+            return false;
         }
     }
 }

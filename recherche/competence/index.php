@@ -8,11 +8,11 @@ $titre = "Recherche sur des critères imbriqués";
 
 $data = json_encode(Competence::getLesBlocs());
 
-$head = <<<EOD
+$head = <<<HTML
 <script>
     let data = $data;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

@@ -267,7 +267,7 @@ begin
         signal sqlstate '45000' set message_text = '#Ce nom est déjà utilisé par une autre catégorie';
     end if;
 
-    -- Vérification des l'intervalle des âge
+    -- Vérification de l'intervalle des âges
 
     if new.ageMin not regexp '^([1-9]|[1-9][0-9])$' then
         signal sqlstate '45000' set message_text = '#Le format de l\'âge minimale est invalide.';
@@ -372,7 +372,7 @@ create trigger avantAjoutClub
     for each row
 begin
     -- Vérification sur l'id
-    IF new.id REGEXP '^[0-8]{3}[0-9]{3}$' = 0 THEN
+    IF new.id REGEXP '^[0-8]{3}[0-9]{3}$' = 0 then
         signal sqlstate '45000' set message_text =
                 'Le numéro du club doit être un nombre de 6 chiffres commençant par 080';
     end if;
@@ -388,7 +388,7 @@ begin
         signal sqlstate '45000' set message_text = '#Le nom doit comprendre entre 3 et 60 caractères';
     end if;
 
-    if new.nom not regexp '^[A-Za-z]+([ ''\-.]?[A-Za-z])*$' THEN
+    if new.nom not regexp '^[A-Za-z]+([ ''\-.]?[A-Za-z])*$' then
         signal sqlstate '45000' set message_text = '#Le format du nom est invalide.';
     end if;
 
@@ -405,7 +405,7 @@ create trigger avantMajClub
 begin
     -- Vérification sur l'id
     if new.id != old.id then
-        IF new.id REGEXP '^[0-8]{3}[0-9]{3}$' = 0 THEN
+        IF new.id REGEXP '^[0-8]{3}[0-9]{3}$' = 0 then
             signal sqlstate '45000' set message_text =
                     'Le numéro du club doit être un nombre de 6 chiffres commençant par 080';
         end if;
@@ -425,7 +425,7 @@ begin
             signal sqlstate '45000' set message_text = '#Le nom doit comprendre entre 3 et 60 caractères';
         end if;
 
-        if new.nom not regexp '^[A-Za-z]+([ ''\-.]?[A-Za-z])*$' THEN
+        if new.nom not regexp '^[A-Za-z]+([ ''\-.]?[A-Za-z])*$' then
             signal sqlstate '45000' set message_text = '#Le format du nom est invalide.';
         end if;
 

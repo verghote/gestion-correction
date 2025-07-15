@@ -5,6 +5,26 @@ declare(strict_types=1);
 
 class Club extends Table
 {
+
+    /**
+     * Configuration intégrée pour l'upload des logos.
+     */
+    private const CONFIG = [
+        'repertoire' => '/data/club/',
+        'extensions' => ["jpg", "png"],
+        'types' => ["image/pjpeg", "image/jpeg", "x-png", "image/png"],
+        'maxSize' => 150 * 1024,
+        'require' => false,
+        'rename' => true,
+        'sansAccent' => true,
+        'redimensionner' => false,
+        'height' => 500,
+        'width' => 500,
+        'accept' => '.jpg, .png',
+    ];
+
+    private const DIR = RACINE . self::CONFIG['repertoire'];
+
     public function __construct()
     {
         parent::__construct('club');
@@ -29,15 +49,28 @@ class Club extends Table
         $input->MaxLength = 70;
         $this->columns['nom'] = $input;
 
+        // colonne fichier : un enregistrement est associé à un fichier image (logo du club)
+        $input = new InputFileImg(self::CONFIG);
+        $input->Directory = self::DIR;
+        $input->Require = false; // le logo n'est pas obligatoire
+        $this->columns['fichier'] = $input;
+
         // définition des colonnes modifiables en mode colonne
         $this->listOfColumns->Values = ['nom'];
-
     }
 
     // ------------------------------------------------------------------------------------------------
     // Méthodes concernant les opérations de consultation
     // ------------------------------------------------------------------------------------------------
 
+    /**
+     * Renvoie la configuration du logo des partenaires
+     * @return array<string, mixed>
+     */
+    public static function getConfig(): array
+    {
+        return self::CONFIG;
+    }
 
     /**
      * Retourner l'ensemble des clubs
@@ -46,19 +79,17 @@ class Club extends Table
      */
     public static function getAll(): array
     {
-        $sql = <<<EOD
-           SELECT id, nom, fichier, (select count(*) from coureur where coureur.idClub = club.id) as nb
-           FROM club
+        $sql = <<<SQL
+           select id, nom, fichier, (select count(*) from coureur where coureur.idClub = club.id) as nb
+           from club
            order by nom;
-EOD;
-        $db = Database::getInstance();
-        $cmd = $db->query($sql);
-        $lesLignes = $cmd->fetchAll(PDO::FETCH_ASSOC);
-        $cmd->closeCursor();
+SQL;
+        $select = new Select();
+        $lesLignes = $select->getRows($sql);
+
         // ajout d'une colonne permettant de vérifier l'existence du logo
-        $rep = RACINE . "/data/club";
         foreach ($lesLignes as &$ligne) {
-            $ligne['present'] = isset($ligne['fichier']) && file_exists("$rep/{$ligne['fichier']}");
+            $ligne['present'] = isset($ligne['fichier']) && is_file(self::DIR . $ligne['fichier']);
         }
         return $lesLignes;
     }
@@ -70,11 +101,11 @@ EOD;
      */
     public static function getListe(): array
     {
-        $sql = <<<EOD
-             SELECT id, nom 
-             FROM club
-             ORDER BY nom;
-EOD;
+        $sql = <<<SQL
+           select id, nom, (select count(*) from coureur where coureur.idClub = club.id) as nb
+           from club
+           order by nom;
+SQL;
         $select = new Select();
         return $select->getRows($sql);
     }
@@ -86,11 +117,11 @@ EOD;
      */
     public static function getById(string $id): array | false
     {
-        $sql = <<<EOD
-             SELECT id, nom, fichier,  (select count(*) from coureur where coureur.idClub = club.id) as nb
-             FROM club
-             WHERE id = :id;
-EOD;
+        $sql = <<<SQL
+             select id, nom, fichier,  (select count(*) from coureur where coureur.idClub = club.id) as nb
+             from club
+             where id = :id;
+SQL;
         $select = new Select();
         return $select->getRow($sql, ['id' => $id]);
     }

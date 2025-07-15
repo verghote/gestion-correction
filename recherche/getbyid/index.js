@@ -1,19 +1,19 @@
 "use strict";
 
-import {
-    afficherErreur,
-    getAge,
-    filtrerLaSaisie,
-    afficherErreurSaisie,
-    afficherDansConsole,
-    configurerFormulaire,
-    donneesValides
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
+import {appelAjax} from "/composant/fonction/ajax.js";
+import {configurerFormulaire, donneesValides, filtrerLaSaisie, } from "/composant/fonction/controle.js";
+import {getAge} from '/composant/fonction/date.js';
+
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
 
 // récupération des éléments de l'interface
 
-const licenceR = document.getElementById('licenceR');
 const licence = document.getElementById('licence');
 const nom = document.getElementById('nom');
 const prenom = document.getElementById('prenom');
@@ -23,49 +23,33 @@ const nomClub = document.getElementById('nomClub');
 const idCategorie = document.getElementById('idCategorie');
 const age = document.getElementById('age');
 
-// filtrage de la saisie
-filtrerLaSaisie('licenceR', /[0-9]/);
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
-configurerFormulaire();
-
-// gestion des événements
-licenceR.onchange = () => {
-    effacer();
+licence.onchange = () => {
     if (donneesValides()) {
-        rechercher(licenceR.value);
+        rechercher(licence.value);
     }
 };
 
-licenceR.onfocus = () => {
-    licenceR.value = '';
-}
+// Efface le champ de saisie quand celui-ci est sélectionné
+licence.onfocus = effacer;
 
 // Lancement de la recherche
 function rechercher(licence) {
-    $.ajax({
+    appelAjax({
         url: 'ajax/getbylicence.php',
-        method: 'post',
-        data: {
+         data: {
             licence: licence,
         },
-        dataType: 'json',
         success: (data) => {
-            if (data.error) {
-                afficherErreurSaisie('licenceR', data.error.licenceR);
-            } else {
                 afficher(data);
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-            afficherDansConsole(reponse.responseText);
         }
     });
 }
 
 function afficher(coureur) {
-    licenceR.value = '';
-    licence.innerText = coureur.licence;
     nom.innerText = coureur.nom;
     prenom.innerText = coureur.prenom;
     sexe.innerText = coureur.sexe;
@@ -73,16 +57,30 @@ function afficher(coureur) {
     nomClub.innerText = coureur.nomClub;
     idCategorie.innerText = coureur.idCategorie;
     age.innerText = getAge(coureur.dateNaissanceFr) + ' ans';
+    licence.blur(); // retire le focus du champ de saisie
 }
 
+/**
+ * Efface les valeurs affichées dans les balises div de class fiche-value.
+ */
 function effacer() {
-
-    licence.innerText = '';
-    nom.innerText = '';
-    prenom.innerText = '';
-    sexe.innerText = '';
-    dateNaissance.innerText = '';
-    nomClub.innerText = '';
-    idCategorie.innerText = '';
-    age.innerText = '';
+    document.querySelectorAll('.fiche-value').forEach(el => {
+        const input = el.querySelector('input');
+        if (input) {
+            input.value = ''; // efface juste le contenu du champ input
+        } else {
+            el.innerText = ''; // efface le contenu textuel des autres champs
+        }
+    });
 }
+
+
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+// filtrage de la saisie
+filtrerLaSaisie('licence', /[0-9]/);
+
+configurerFormulaire();

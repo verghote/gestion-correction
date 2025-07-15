@@ -4,8 +4,8 @@ declare(strict_types=1);
 /**
  * Classe InputText : contrôle une chaine de caractères
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.2
+ * @Date : 05/07/2025
  */
 class InputText extends Input
 {
@@ -16,7 +16,8 @@ class InputText extends Input
     // nombre maximum de caractères
     public int $MaxLength;
 
-    // Indique s'il faut mettre la valeur en majuscule 'U', en minuscule 'L' ou la laisser telle quel
+    // Indique s'il faut mettre la valeur en majuscule 'U', en minuscule 'L',
+    // mot avec majuscule 'W', première lettre en majuscule 'F' ou la laisser telle quel
     public string $Casse = '';
 
     // les accents seront retirés
@@ -87,6 +88,12 @@ class InputText extends Input
                 $valeur = strtoupper($valeur);
             } elseif ($this->Casse === 'L') {
                 $valeur = strtolower($valeur);
+            } elseif ($this->Casse === 'W') {
+                // Mettre en majuscule la première lettre de chaque mot
+                $valeur = ucwords(strtolower($valeur));
+            } elseif ($this->Casse === 'F') {
+                // Mettre en majuscule la première lettre de la valeur
+                $valeur = ucfirst(strtolower($valeur));
             }
 
             if (isset($this->Pattern)) {

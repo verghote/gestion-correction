@@ -1,90 +1,109 @@
 "use strict";
 
-/* global data, Tabulator */
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-// récupération des données de l'interface
+import {ucWord} from "/composant/fonction/format.js";
+
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+
+/* global data  */
 const search = document.getElementById('search');
+const nb = document.getElementById('nb');
+const lesLignes = document.getElementById('lesLignes');
 
-// gestionnaire d'évènement
+
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
+
 search.onfocus = () => {
     search.value = '';
 };
 
 // sur chaque caractère saisi dans le champ de recherche
-search.oninput = filtrer;
+search.oninput = afficher;
 
-// Initialisation du composant Tabulator
-const table = new Tabulator('#tableau', {
-    data : data,
-    layout: "fitColumns",
-    responsiveLayout: "hide", // Active la gestion des colonnes en mode responsive
-    columns: [
-        {
-            title: 'Licence',
-            field: 'licence',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 100,
-            responsive: 2
-        },
-        {
-            title: 'Nom',
-            field: 'nom',
-            minWidth: 150,
-        },
-        {
-            title: 'Prénom',
-            field: 'prenom',
-            minWidth: 150,
-        },
-        {
-            title: 'Sexe',
-            field: 'sexe',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 80,
 
-            responsive: 2 // Priorité de masquage (2 = masqué après les colonnes ayant priorité 1)
-        },
-        {
-            title: 'Né(e) le',
-            field: 'dateNaissanceFr',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 90,
-            responsive: 2 // Priorité de masquage
-        },
-        {
-            title: 'Cat.',
-            field: 'idCategorie',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 80,
-            responsive: 2
-        },
-        {
-            title: 'Club',
-            field: 'nomClub',
-            minWidth: 150,
-            responsive: 2 // Priorité de masquage
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
+
+function afficher() {
+    lesLignes.innerHTML = '';
+    let compteur = 0;
+
+    for (const coureur of data) {
+        if (!filtrer(coureur)) {
+            continue;
         }
-    ],
-    tooltips: true,
-    pagination: 'local',
-    paginationSize: 20,
-    paginationSizeSelector: [20, 50, 100],
-    movableColumns: true,
-    initialSort: [
-        {column: 'licence', dir: 'asc'}
-    ],
-    rowFormatter: function (row) {
-        row.getElement().style.backgroundColor = "#FFF";
-    },
-});
+        compteur++;
 
-function filtrer() {
-    table.setFilter(x => Object.values(x).some(value => value.toString().toLowerCase().includes(search.value.toLowerCase())));
+        const tr = lesLignes.insertRow();
+        tr.style.verticalAlign = 'middle';
+        tr.id = coureur.id;
+
+        // Colonne : licence
+        let td = tr.insertCell();
+        td.innerText = coureur.licence;
+        td.style.textAlign = 'center';
+
+        // Colonne Nom
+        td = tr.insertCell();
+        td.innerText = ucWord(coureur.nomPrenom);
+        td.style.textAlign = 'left';
+
+        // Colonne : Sexe
+        td = tr.insertCell();
+        td.innerText = coureur.sexe;
+        td.style.textAlign = 'center';
+        td.classList.add("masquer");
+
+        // Colonne : Date de naissance
+        td = tr.insertCell();
+        td.innerText = coureur.dateNaissanceFr;
+        td.style.textAlign = 'center';
+        td.classList.add("masquer");
+
+        // Colonne : Catégorie
+        td = tr.insertCell();
+        td.innerText = coureur.idCategorie;
+        td.style.textAlign = 'center';
+
+        // Colonne : Club
+        td = tr.insertCell();
+        td.innerText = coureur.nomClub;
+        td.style.textAlign = 'left';
+    }
+
+    nb.innerText = compteur;
 }
+
+
+/**
+ * Filtre les coureurs en fonction des critères sélectionnés.
+ * @param coureur
+ * @returns {boolean}
+ */
+function filtrer(coureur) {
+    if (search.value === '') {
+        return true; // Si le champ de recherche est vide, on affiche tous les coureurs
+    }
+    return coureur.nomPrenom.toLowerCase().includes(search.value.toLowerCase()) ||
+           coureur.licence.includes(search.value) ||
+           coureur.dateNaissanceFr.includes(search.value) ||
+           coureur.nomClub.toLowerCase().includes(search.value.toLowerCase());
+}
+
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+afficher();
 
 
 

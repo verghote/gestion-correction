@@ -1,77 +1,90 @@
 ﻿"use strict";
 
-import {
-    afficherDansConsole,
-    genererMessage, afficherErreur
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-/* global lesProjets, Tabulator */
+import {appelAjax} from "/composant/fonction/ajax.js";
+import {activerTri } from "/composant/fonction/tableau.js";
 
-// Récupération des éléments de l'interface
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+
+/* global lesProjets */
+
 const idProjet = document.getElementById('idProjet');
-const tableau = document.getElementById('tableau');
+const lesLignes = document.getElementById('lesLignes');
 const msg = document.getElementById('msg');
+
+let lesCompetences = [];
+
+// -----------------------------------------------------------------------------------
+// procédures évènementielles
+// -----------------------------------------------------------------------------------
 
 // Sur le changement de valeur sélectionnée dans la zone de liste, récupérer les compétences associées
 idProjet.onchange = () => {
-    if (idProjet.value !== '0') {
         chargerLesCompetencesDuProjet(idProjet.value);
-    }
 };
+
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
+
+/**
+ * Récupération des compétences du projet sélectionné
+ */
+function chargerLesCompetencesDuProjet(idProjet) {
+    msg.innerHTML = "";
+    appelAjax({
+        url: 'ajax/getlescompetences.php',
+        data: { idProjet: idProjet },
+        success: data => {
+				lesCompetences = data;
+                afficherLesCompetences(lesCompetences);
+            }
+    });
+}
+
+function afficherLesCompetences(lesCompetences) {
+    // Effacer le tableau précédent
+    lesLignes.innerHTML = "";
+
+    for (const competence of lesCompetences) {
+        const tr = lesLignes.insertRow();
+        tr.style.verticalAlign = 'middle';
+
+        // Colonne : Code
+        tr.insertCell().innerText = competence.code;
+
+        // Colonne : libelle
+        tr.insertCell().innerText = competence.libelle;
+    }
+}
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
 
 // Alimenter la zone de liste des projets
 for (const projet of lesProjets) {
     idProjet.add(new Option(projet.nom, projet.id));
 }
 
-// Initialiser Tabulator pour afficher les compétences
-let table = new Tabulator(tableau, {
-    layout: "fitDataStretch",
-    columns: [
-        {
-            title: "Code",
-            field: "code",
-            headerHozAlign: "center",
-            width: 70,
-        },
-        {   title: "Libellé",
-            field: "libelle",
-            headerHozAlign: "left",
-            formatter: function(cell) {
-                return `<div class="wrap-text">${cell.getValue()}</div>`; // Ajout d'une div avec la classe wrap-text
-            },
+// afficher les compétences du premier projet
+chargerLesCompetencesDuProjet(lesProjets[0].id);
 
-        }
-    ],
-    placeholder: "Aucune compétence à afficher",
-    rowFormatter: function(row) {
-        row.getElement().style.backgroundColor = "#FFF";
-    },
+
+// Activer le tri sur les colonnes
+activerTri({
+	idTable: "leTableau",
+	getData: () => lesCompetences,
+	afficher: afficherLesCompetences,
+    triInitial: {
+        colonne: 'libelle',
+        ordre: "asc"
+    }
 });
 
 
-/**
- * Récupération des compétences du projet sélectionné
- */
-function chargerLesCompetencesDuProjet(idProjet) {
-    $.ajax({
-        url: 'ajax/getlescompetences.php',
-        method: 'POST',
-        data: {
-            idProjet: idProjet
-        },
-        dataType: 'json',
-        success: data => {
-            if (data.error) {
-                msg.innerHTML = genererMessage(data.error.global, 'orange');
-            } else {
-                msg.innerHTML = '';
-                table.setData(data); // Met à jour le tableau avec les données reçues
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-            afficherDansConsole(reponse.responseText);
-        }
-    });
-}

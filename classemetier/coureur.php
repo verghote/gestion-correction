@@ -53,20 +53,9 @@ class Coureur extends Table
         // dateNaissance
         $input = new InputDate();
         $input->Require = true;
-        // récupération de l'intervalle concernant la date de naissance fixée à partir des catégories
-        $annee = date('Y');
-        $mois = intval(Date('m'));
-        if ($mois >= 9) {
-            $annee++;
-        }
-        $sql = <<<EOD
-        SELECT concat($annee - min(ageMin), '-12-31') as dateMax,  concat($annee - max(ageMax), '-01-01') as dateMin
-        FROM categorie
-EOD;
-        $select = new Select();
-        $intervalle = $select->getRow($sql);
-        $input->Max = $intervalle['dateMax'];
-        $input->Min = $intervalle['dateMin'];
+
+        $input->Max = Categorie::getDateNaissanceMax();
+        $input->Min = Categorie::getDateNaissanceMin();
         $this->columns['dateNaissance'] = $input;
 
         // idClub
@@ -110,18 +99,15 @@ EOD;
      */
     public static function getAll(): array
     {
-        $sql = <<<EOD
-    Select licence, coureur.nom, prenom , sexe, date_format(dateNaissance, '%d/%m/%Y') as dateNaissanceFr, 
-           idCategorie , club.nom AS nomClub 
-    FROM coureur
+        $sql = <<<SQL
+    Select licence, coureur.nom, prenom ,  concat(coureur.nom, ' ', prenom) as nomPrenom, sexe, date_format(dateNaissance, '%d/%m/%Y') as dateNaissanceFr, 
+           idCategorie , club.nom AS nomClub, idClub 
+    from coureur
     join club on coureur.idClub = club.id 
     order by nom, prenom;
-EOD;
-        $db = Database::getInstance();
-        $cmd = $db->query($sql);
-        $lesLignes = $cmd->fetchAll(PDO::FETCH_ASSOC);
-        $cmd->closeCursor();
-        return $lesLignes;
+SQL;
+        $select = new Select();
+        return $select->getRows($sql);
     }
 
     /**
@@ -130,11 +116,11 @@ EOD;
      */
     public static function getListe(): array
     {
-        $sql = <<<EOD
-            SELECT licence,  concat(coureur.nom, ' ', prenom) as nomPrenom
-             FROM coureur
+        $sql = <<<SQL
+            select licence,  concat(coureur.nom, ' ', prenom) as nomPrenom
+             from coureur
              order by nomPrenom;
-EOD;
+SQL;
         $select = new Select();
         return $select->getRows($sql);
     }
@@ -147,14 +133,13 @@ EOD;
      */
     public static function getByLicence(string $licence): mixed
     {
-        $sql = <<<EOD
+        $sql = <<<SQL
               Select licence, coureur.nom, prenom , sexe, date_format(dateNaissance, '%d/%m/%Y') as dateNaissanceFr, dateNaissance,
                      idCategorie , club.nom AS nomClub, ffa, telephone, email, idClub
-             FROM coureur
+             from coureur
                 join club on coureur.idClub = club.id 
              where licence = :licence
-EOD;
-
+SQL;
         $select = new Select();
         return $select->getRow($sql, ['licence' => $licence]);
     }
@@ -166,15 +151,15 @@ EOD;
      */
     public static function getByCategorie(string $idCategorie): array
     {
-        $sql = <<<EOD
-            Select licence, coureur.nom, prenom , sexe, 
+        $sql = <<<SQL
+            Select licence, coureur.nom, prenom , concat(coureur.nom, ' ', prenom) as nomPrenom,  sexe, 
                        date_format(dateNaissance, '%d/%m/%Y') as dateNaissanceFr, 
                        club.nom AS nomClub, idCategorie
-            FROM coureur
+            from coureur
                 join club on coureur.idClub = club.id
-            Where idCategorie = :idCategorie
-            ORDER BY coureur.nom, prenom;   
-EOD;
+            where idCategorie = :idCategorie
+            order by coureur.nom, prenom;   
+SQL;
         $select = new Select();
         return $select->getRows($sql, ['idCategorie' => $idCategorie]);
     }
@@ -182,13 +167,13 @@ EOD;
     public static function getBySexeClubCategorie($sexe = '*', $idClub = '*', $idCategorie = '*'): array
     {
         $lesParametres = [];
-        $sql = <<<EOD
-            Select licence, coureur.nom, prenom , sexe, 
+        $sql = <<<SQL
+            Select licence, coureur.nom, prenom , concat(coureur.nom, ' ', prenom) as nomPrenom, sexe, 
                        date_format(dateNaissance, '%d/%m/%Y') as dateNaissanceFr, 
                        club.nom AS nomClub, idCategorie
-            FROM coureur , club
+            from coureur , club
             where coureur.idClub = club.id
-EOD;
+SQL;
         if ($sexe !== '*') {
             $sql .= " and sexe = :sexe";
             $lesParametres['sexe'] = $sexe;
@@ -201,7 +186,7 @@ EOD;
             $sql .= " and idCategorie = :idCategorie";
             $lesParametres['idCategorie'] = $idCategorie;
         }
-        $sql .= " ORDER BY coureur.nom, prenom;";
+        $sql .= " order by coureur.nom, prenom;";
 
         $select = new Select();
         return $select->getRows($sql, $lesParametres);
@@ -215,11 +200,11 @@ EOD;
 
     public static function clearColonne(string $colonne, int $licence): void
     {
-        $sql = <<<EOD
+        $sql = <<<SQL
             update coureur 
             set $colonne = null
             where licence = :licence
-EOD;
+SQL;
         $db = Database::getInstance();
 
         try {
@@ -227,7 +212,7 @@ EOD;
             $curseur->bindValue('licence', $licence);
             $curseur->execute();
         } catch (PDOException $e) {
-            Erreur::envoyerReponse($e->getMessage(), 'global');
+            Erreur::traiterReponse($e->getMessage(), 'global');
         }
     }
 

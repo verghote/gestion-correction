@@ -13,19 +13,21 @@ class Categorie extends Table
         //colonne id
         $input = new InputText();
         $input->Require = true;
-        // des lettres suvi éventuellement d'un espace obligatoirement suivi d'un ou 2 chiffres
+        // une lettre suvie d'un ou 1 2 caractères alphanumériques
         $input->Pattern = "^[A-za-z][A-za-z0-9]{1,2}$";
         $input->MinLength = 2;
         $input->MaxLength = 3;
+        $input->Casse = 'U'; // la valeur sera mise en majuscule
         $this->columns['id'] = $input;
 
         // colonne nom
         $input = new InputText();
         $input->Require = true;
-        // des lettres suvi éventuellement d'un espace obligatoirement suivi d'un ou 2 chiffres
+        // des lettres suvies éventuellement d'un espace obligatoirement suivi d'un ou 2 chiffres
         $input->Pattern = "^[A-Za-z][A-Za-z]*(?: \d{1,2})?$";
         $input->MinLength = 5;
         $input->MaxLength = 20;
+        $input->Casse = 'F'; // la valeur sera mise en majuscule au niveau de la première lettre
         $this->columns['nom'] = $input;
 
         // colonne ageMin
@@ -59,17 +61,15 @@ class Categorie extends Table
         if ($mois >= 9) {
             $annee++;
         }
-        $sql = <<<EOD
-            SELECT id, nom, concat(ageMin, '-', ageMax) as age, concat($annee - ageMax, '-' ,$annee - ageMin) as annee
-            FROM categorie
-            Order by ageMin
-EOD;
-        $db = Database::getInstance();
-        $cmd = $db->query($sql);
-        $lesLignes = $cmd->fetchAll(PDO::FETCH_ASSOC);
-        $cmd->closeCursor();
-        return $lesLignes;
+        $sql = <<<SQL
+            select id, nom, concat(ageMin, '-', ageMax) as age, concat($annee - ageMax, '-' ,$annee - ageMin) as annee
+            from categorie
+            order by ageMin;
+SQL;
+        $select = new Select();
+        return $select->getRows($sql);
     }
+
 
 
     /**
@@ -78,11 +78,12 @@ EOD;
      * @return array
      */
     public static function getListe() {
-        $sql = <<<EOD
-             SELECT id, nom 
-             FROM categorie
-             ORDER BY ageMin;
-EOD;
+        $sql = <<<SQL
+             select id, nom, ageMin, ageMax, 
+                    (select count(*) from coureur where coureur.idCategorie = categorie.id) as nb
+             from categorie
+             order by ageMin;
+SQL;
         $select = new Select();
         return $select->getRows($sql);
     }
@@ -94,11 +95,11 @@ EOD;
      */
     public static function getById(string $id): array | false
     {
-        $sql = <<<EOD
-             SELECT id, nom, ageMin, ageMax, (select count(*) from coureur where coureur.idCategorie = categorie.id) as nb
-             FROM categorie
-             WHERE id = :id;
-EOD;
+        $sql = <<<SQL
+             select id, nom, ageMin, ageMax, (select count(*) from coureur where coureur.idCategorie = categorie.id) as nb
+             from categorie
+             where id = :id;
+SQL;
         $select = new Select();
         return $select->getRow($sql, ['id' => $id]);
     }
@@ -116,12 +117,53 @@ EOD;
         if ($mois >= 9) {
             $annee++;
         }
-        $sql = <<<EOD
-            SELECT concat($annee - min(ageMin), '-12-31') as dateMax,  concat($annee - max(ageMax), '-01-01') as dateMin
-            FROM categorie      
-EOD;
+        $sql = <<<SQL
+            select concat($annee - min(ageMin), '-12-31') as dateMax,  concat($annee - max(ageMax), '-01-01') as dateMin
+            from categorie      
+SQL;
         $select = new Select();
         return $select->getRow($sql);
     }
+
+    /**
+     * Retourne la date de naissance la plus ancienne (maximum des ageMax)
+     * @return string
+     */
+    public static function getDateNaissanceMin(): string
+    {
+        $annee = date('Y');
+        if (intval(date('m')) >= 9) {
+            $annee++;
+        }
+
+        $sql = <<<SQL
+        SELECT concat($annee - max(ageMax), '-01-01') as dateMin
+        FROM categorie
+SQL;
+        $select = new Select();
+        $row = $select->getRow($sql);
+        return $row['dateMin'];
+    }
+
+    /**
+     * Retourne la date de naissance la plus récente (minimum des ageMin)
+     * @return string
+     */
+    public static function getDateNaissanceMax(): string
+    {
+        $annee = date('Y');
+        if (intval(date('m')) >= 9) {
+            $annee++;
+        }
+
+        $sql = <<<SQL
+        SELECT concat($annee - min(ageMin), '-12-31') as dateMax
+        FROM categorie
+SQL;
+        $select = new Select();
+        $row = $select->getRow($sql);
+        return $row['dateMax'];
+    }
+
 
 }

@@ -1,8 +1,7 @@
 <style>
     .fiche-grid {
         display: grid;
-        grid-template-columns: 1fr 2fr;
-        max-width: 700px;
+        grid-template-columns: 2fr 3fr;
         margin: 1rem auto;
         padding: 1rem;
         background: transparent;
@@ -22,37 +21,39 @@
         border: 1px solid #ddd;
     }
 
+    .licence-input {
+        width: 95%;
+        padding: 0.4rem;
+        border: 1px solid #ccc;
+    }
+
 </style>
 
-<div class="container" style="max-width: 800px; margin: auto;">
-    <!-- Zone de recherche -->
-    <div class="zone-saisie">
-        <label for="licenceR" hidden>Licence</label>
-        <input id="licenceR" type="text"
-               class="form-control recherche"
-               placeholder="Licence (6 ou 7 chiffres) Ex : 000010"
+
+<div class="fiche-grid">
+    <div class="fiche-label">Licence</div>
+    <div class="fiche-value">
+        <input type="text" id="licence"
+               class="licence-input"
+               placeholder="Saisir le n° licence "
                required
                pattern="[0-9]{6,7}"
                maxlength="7"
                minlength="6"
-               autocomplete="on"
-               style="max-width: 350px; width: 100%; margin: auto; display: block;"
-        >
-    </div>
-
-    <!-- Zone d'affichage des données -->
-    <div class="fiche-grid">
-        <div class="fiche-label">Licence</div><div class="fiche-value" id="licence"></div>
-        <div class="fiche-label">Nom</div><div class="fiche-value" id="nom"></div>
-        <div class="fiche-label">Prénom</div><div class="fiche-value" id="prenom"></div>
-        <div class="fiche-label">Date de naissance</div><div class="fiche-value" id="dateNaissance"></div>
-        <div class="fiche-label">Sexe</div><div class="fiche-value" id="sexe"></div>
-        <div class="fiche-label">Âge</div><div class="fiche-value" id="age"></div>
-        <div class="fiche-label">Catégorie</div><div class="fiche-value" id="idCategorie"></div>
-        <div class="fiche-label">Club</div><div class="fiche-value" id="nomClub"></div>
-    </div>
-
+               autocomplete="on"></div>
+    <div class="fiche-label">Nom</div>
+    <div class="fiche-value" id="nom"></div>
+    <div class="fiche-label">Prénom</div>
+    <div class="fiche-value" id="prenom"></div>
+    <div class="fiche-label">Date de naissance</div>
+    <div class="fiche-value" id="dateNaissance"></div>
+    <div class="fiche-label">Sexe</div>
+    <div class="fiche-value" id="sexe"></div>
+    <div class="fiche-label">Âge</div>
+    <div class="fiche-value" id="age"></div>
+    <div class="fiche-label">Catégorie</div>
+    <div class="fiche-value" id="idCategorie"></div>
+    <div class="fiche-label">Club</div>
+    <div class="fiche-value" id="nomClub"></div>
 </div>
-
-
 

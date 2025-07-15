@@ -1,132 +1,78 @@
 <div class="formulaire">
     <div id="msg"></div>
-    <div class="row mt-3">
-        <div class="col-sm-6">
-            <label for="nom" class="col-form-label obligatoire ">Nom</label>
-            <i class="bi bi-info-circle text-primary"
-               data-bs-toggle="popover"
-               data-bs-trigger="hover"
-               data-bs-html="true"
-               data-bs-placement='right'
-               data-bs-title="<div style='font-size:10px'>
-							30 caractères maximum
-							<br> Caractères autorisés : lettres non accentuées et espace
-							</div>"></i>
-            <input id="nom"
-                   type="text"
-                   class="form-control "
-                   required
-                   pattern="^[A-Za-z]( ?[A-Za-z])*$"
-                   maxlength='30'
-                   minlength="3"
-                   autocomplete="off">
-        </div>
-        <div class="col-sm-6">
-            <label for="prenom" class="col-form-label obligatoire">Prénom </label>
-            <i class="bi bi-info-circle text-primary"
-               data-bs-toggle="popover"
-               data-bs-trigger="hover"
-               data-bs-html="true"
-               data-bs-placement='right'
-               data-bs-title="<div style='font-size:11px'>
-						30 caractères maximum
-						<br> Caractères autorisés : lettres non accentuées et espace
-						</div>"></i>
-            <input id="prenom"
-                   type="text"
-                   class="form-control  "
-                   required
-                   pattern="^[A-Za-z]( ?[A-Za-z])*$"
-                   maxlength='30'
-                   minlength="3"
-                   autocomplete="off">
-        </div>
-    </div>
 
-    <div class="row mt-3">
-        <div class="col-sm-6">
-            <label class="col-form-label " for="sexe">Sexe</label>
-            <select class="form-select" id="sexe" style="width: 150px;">
-                <option value="M">Homme</option>
-                <option value="F">Femme</option>
-            </select>
-        </div>
-        <div class="col-sm-6">
-            <label for="dateNaissance" class="col-form-label obligatoire">Date de naissance
-            </label>
-            <input id='dateNaissance' type="date" class="form-control"
-                   required
-                   style="width: 170px"
-            >
-        </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col-sm-6  ">
-            <label for="licence" class="col-form-label obligatoire">Licence</label>
-            <i class="bi bi-info-circle text-primary"
-               data-bs-toggle="popover"
-               data-bs-trigger="hover"
-               data-bs-html="true"
-               data-bs-placement='right'
-               data-bs-title="Numéro composé de 6 ou 7 chiffres"></i>
-            <input id='licence'
-                   type="text"
-                   class="form-control"
-                   style="width: 150px"
-                   required
-                   minlength='6'
-                   maxlength='30'
-                   pattern="^[0-9]{6,7}$"
-                   autocomplete="off">
-        </div>
-        <div class="col-sm-6  ">
-            <label for="idClub" class="col-form-label obligatoire">Club</label>
-            <select class="form-select" id="idClub"></select>
-        </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col-sm-6  ">
-            <div class="form-check form-switch">
-                <label class="form-check-label" for='ffa'>Validé par le Web Service de la FFA</label>
-                <input class="form-check-input" type="checkbox" id="ffa">
-            </div>
-        </div>
-    </div>
+    <label for="nom" class="obligatoire">
+        Nom
+        <span class="commentaire">(30 caractères maximum, lettres non accentuées et espace autorisés)</span>
+    </label>
+    <input id="nom"
+           type="text"
+           class="form-control"
+           required
+           pattern="^[A-Za-z]( ?[A-Za-z])*$"
+           maxlength="30"
+           minlength="3"
+           autocomplete="off">
 
-    <div class="row mt-3">
-        <div class="col-sm-6 col-12">
-            <label for="email" class="col-form-label">Adresse mail</label>
-            <input id="email"
-                   type="email"
-                   class="form-control"
-                   autocomplete="off">
-        </div>
-        <div class="col-sm-6 col-12 ">
-            <label for="telephone" class="col-form-label">Téléphone portable</label>
-            <i class="bi bi-info-circle text-primary"
-               data-bs-toggle="popover"
-               data-bs-trigger="hover"
-               data-bs-html="true"
-               data-bs-placement='right'
-               data-bs-title="<div style='font-size:11px'>
-						Numéro commençant par 06 ou 07 sans espace ni autre caractère de séparation
-						</div>">
-            </i>
-            <input id="telephone"
-                   type="text"
-                   class="form-control"
-                   pattern="^0(6|7)[0-9]{8}$"
-                   maxlength="10"
-                   minlength="10"
-                   autocomplete="off">
-        </div>
-    </div>
+    <label for="prenom" class="obligatoire">
+        Prénom
+        <span class="commentaire">(30 caractères maximum, lettres non accentuées et espace autorisés)</span>
 
-    <div class="d-flex flex-row justify-content-between mt-3">
-        <button id='btnAjouter' class="btn btn-sm btn-danger">Ajouter</button>
-        <a href="../../index.php" class="btn btn-sm btn-primary">
-            <i class="bi bi-arrow-90deg-up"></i>
-            Annuler
-        </a>
+    </label>
+    <input id="prenom"
+           type="text"
+           class="form-control"
+           required
+           pattern="^[A-Za-z]( ?[A-Za-z])*$"
+           maxlength="30"
+           minlength="3"
+           autocomplete="off">
+
+    <label for="sexe">Sexe</label>
+    <select class="form-select" id="sexe" style="width: 150px" >
+        <option value="M">Homme</option>
+        <option value="F">Femme</option>
+    </select>
+
+    <label for="dateNaissance">Date de naissance</label>
+    <input id="dateNaissance" type="date" class="form-control" style="width: 180px">
+
+    <label for="licence" class="obligatoire" >
+        Licence
+        <span class="commentaire">Numéro composé de 6 ou 7 chiffres</span>
+    </label>
+    <input id="licence"
+           type="text"
+           class="form-control"
+           style ="width: 100px"
+           placeholder="6 ou 7 chiffres"
+           required
+           minlength="6"
+           maxlength="7"
+           pattern="^[0-9]{6,7}$"
+           autocomplete="off">
+
+    <label for="idClub" class="obligatoire">Club</label>
+    <select class="form-select" id="idClub"></select>
+
+    <label for="ffa">Validé par le Web Service de la FFA</label>
+    <input class="form-check-input" type="checkbox" id="ffa">
+
+    <label for="email">Adresse mail</label>
+    <input id="email" type="email" class="form-control" autocomplete="off">
+
+    <label for="telephone" >
+        Téléphone portable
+        <span class="commentaire">(Numéro commençant par 06 ou 07 sans espace ni autre caractère de séparation)</span>
+    </label>
+    <input id="telephone"
+           type="text"
+           class="form-control"
+           pattern="^0(6|7)[0-9]{8}$"
+           maxlength="10"
+           minlength="10"
+           autocomplete="off">
+    <div class="d-flex justify-content-evenly mt-3">
+        <button id="btnAjouter" class="btn btn-outline-danger">✚ Ajouter</button>
     </div>
 </div>

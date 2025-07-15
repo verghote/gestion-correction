@@ -1,40 +1,98 @@
 "use strict";
 
-/* global data */
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+/* global lesClubs, repertoire */
 
-// Fonction pour créer une carte
+const lesCartes = document.getElementById('lesCartes');
+
+// -----------------------------------------------------------------------------------
+// Génération dynamique du CSS spécifique aux cartes club
+// -----------------------------------------------------------------------------------
+
+function injecterStyleCarteClub() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .carte-grille {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .carte-club {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .carte-club:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .carte-club .card-body {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+
+        .carte-club img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            aspect-ratio: 1 / 1;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Injecter les styles au démarrage
+injecterStyleCarteClub();
+
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
+
+/**
+ * Crée une carte pour afficher les informations d'un club
+ * @param {Object} element - Données du club
+ * @returns {HTMLDivElement}
+ */
 function creerCarte(element) {
-    // Créer la carte
+    // Création de la carte avec classe spécifique
     const carte = document.createElement('div');
-    carte.classList.add('card', 'mb-1');
+    carte.classList.add('card', 'carte-club', 'shadow-sm');
 
-    // Créer l'entête
+    // En-tête
     const entete = document.createElement('div');
-    entete.classList.add('card-header', 'text-white', 'text-center');
-    // récupération de la couleur de fond définie dans le fichier CSS
-    entete.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color-table').trim();
-    entete.style.minHeight = '75px';
+    entete.classList.add('card-header', 'text-center');
+    entete.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color-header').trim();
+    entete.style.color = getComputedStyle(document.documentElement).getPropertyValue('--text-color-header').trim();
     entete.innerText = element.nom;
 
-    // Créer le corps avec le logo
+    // Corps
     const corps = document.createElement('div');
-    corps.classList.add('card-body', 'text-center', 'logo-club');
+    corps.classList.add('card-body');
 
     if (element.present) {
         const img = document.createElement('img');
-        img.src = `../../data/club/${element.fichier}`;
+        img.src = repertoire + element.fichier;
         img.alt = `${element.nom} logo`;
-        img.style.maxWidth = "100%";
-        img.style.height = "auto";
+        img.classList.add('img-fluid');
         corps.appendChild(img);
     }
 
-    // Créer le pied
+    // Pied
     const pied = document.createElement('div');
     pied.classList.add('card-footer', 'text-muted', 'text-center');
     pied.innerText = `${element.nb} licenciés`;
 
-    // Assembler la carte
+    // Assembler
     carte.appendChild(entete);
     carte.appendChild(corps);
     carte.appendChild(pied);
@@ -42,24 +100,19 @@ function creerCarte(element) {
     return carte;
 }
 
-// Générer les cartes dans une ligne responsive
-function afficherCartes(data) {
-    const row = document.createElement('div');
-    row.classList.add('row', 'g-3'); // Ajout d'un espacement entre les colonnes
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
 
-    for (const element of data) {
-        const col = document.createElement('div');
-        col.classList.add('col-xl-3', 'col-lg-4', 'col-sm-6');
-        col.appendChild(creerCarte(element));
-        row.appendChild(col);
-    }
+// Création du conteneur grille
+const grille = document.createElement('div');
+grille.classList.add('carte-grille');
 
-    // Insérer la ligne dans l'interface
-    const conteneur = document.getElementById('lesCartes');
-    conteneur.innerHTML = ""; // Nettoyer avant d'ajouter
-    conteneur.appendChild(row);
+// Création des cartes
+for (const element of lesClubs) {
+    const carte = creerCarte(element);
+    grille.appendChild(carte);
 }
 
-
-// Affichage des cartes
-afficherCartes(data);
+// Ajout dans la page
+lesCartes.appendChild(grille);

@@ -1,8 +1,8 @@
 <?php
-declare(strict_types=1);
-
 // activation du chargement dynamique des ressources
-require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
+require $_SERVER['DOCUMENT_ROOT'] . '/include/autoload.php';
+
+
 
 // vérification de la transmission des données attendues
 if (!Std::existe('table', 'id') ) {
@@ -21,6 +21,4 @@ if (! class_exists($table)) {
 // Réalisation de la suppression
 $table = new $table();
 $table->delete($_POST['id']);
-
-// Réponse du serveur
-echo json_encode(['success' => "Opération réalisée avec succès"], JSON_UNESCAPED_UNICODE);
+echo json_encode(['success' => "Opération réalisée avec succès"]);

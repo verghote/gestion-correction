@@ -1,129 +1,94 @@
 "use strict";
 
-import {
-    afficherDansConsole,
-    afficherErreur
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-/* global data, Tabulator */
+import {appelAjax} from "/composant/fonction/ajax.js";
+import {ucWord} from "/composant/fonction/format.js";
 
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
 
-// récupération des éléments de l'interface
+/* global data */
+
 const idCategorie = document.getElementById('idCategorie');
+const lesLignes = document.getElementById('lesLignes');
+const nb = document.getElementById('nb');
 
-// Initialisation du composant Tabulator
-const options = {
-    layout: "fitColumns",
-    responsiveLayout: "hide", // Active la gestion des colonnes en mode responsive
-    placeholder: "Aucun coureur dans cette catégorie",
-    columns: [
-        {
-            title: 'Licence',
-            field: 'licence',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 100,
-            responsive: 2
-        },
-        {
-            title: 'Nom',
-            field: 'nom',
-            minWidth: 150,
-        },
-        {
-            title: 'Prénom',
-            field: 'prenom',
-            minWidth: 150,
-        },
-        {
-            title: 'Sexe',
-            field: 'sexe',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 80,
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
-            responsive: 2 // Priorité de masquage (2 = masqué après les colonnes ayant priorité 1)
-        },
-        {
-            title: 'Né(e) le',
-            field: 'dateNaissanceFr',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 90,
-            responsive: 2 // Priorité de masquage
-        },
-        {
-            title: 'Cat.',
-            field: 'idCategorie',
-            hozAlign: "center",
-            headerHozAlign: "center",
-            width: 80,
-            responsive: 2
-        },
-        {
-            title: 'Club',
-            field: 'nomClub',
-            minWidth: 150,
-            responsive: 2 // Priorité de masquage
-        }
-    ],
-    tooltips: true,
-    pagination: 'local',
-    paginationSize: 20,
-    paginationSizeSelector: [20, 50, 100],
-    movableColumns: true,
-    initialSort: [
-        {column: 'licence', dir: 'asc'}
-    ],
-    rowFormatter: function (row) {
-        row.getElement().style.backgroundColor = "#FFF";
-    },
-    // Utilisation du français dans la zone de pagination
-    locale: true,
-    langs: {
-        "fr-fr": {
-            "pagination": {
-                "first": "Première",
-                "first_title": "Première page",
-                "last": "Dernière",
-                "last_title": "Dernière page",
-                "prev": "Précédente",
-                "prev_title": "Page précédente",
-                "next": "Suivante",
-                "next_title": "Page suivante",
-                "page_size": "Taille de page"
-            }
-        }
-    }
-
+// gestionnaire d'évènement
+idCategorie.onchange = () => {
+        getLesCoureurs(idCategorie.value);
 };
-const table = new Tabulator('#tableau', options);
+
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
+
+function afficher(lesCoureurs) {
+    lesLignes.innerHTML = '';
+    nb.innerText = lesCoureurs.length;
+
+    for (const coureur of lesCoureurs) {
+        const tr = lesLignes.insertRow();
+        tr.style.verticalAlign = 'middle';
+        tr.id = coureur.id;
+
+        // Colonne : licence
+        let td = tr.insertCell();
+        td.innerText = coureur.licence;
+        td.style.textAlign = 'center';
+
+        // Colonne Nom
+        td = tr.insertCell();
+        td.innerText = ucWord(coureur.nomPrenom);
+        td.style.textAlign = 'left';
+
+        // Colonne : Sexe
+        td = tr.insertCell();
+        td.innerText = coureur.sexe;
+        td.style.textAlign = 'center';
+        td.classList.add("masquer");
+
+        // Colonne : Date de naissance
+        td = tr.insertCell();
+        td.innerText = coureur.dateNaissanceFr;
+        td.style.textAlign = 'center';
+        td.classList.add("masquer");
+
+        // Colonne : Catégorie
+        td = tr.insertCell();
+        td.innerText = coureur.idCategorie;
+        td.style.textAlign = 'center';
+
+        // Colonne : Club
+        td = tr.insertCell();
+        td.innerText = coureur.nomClub;
+        td.style.textAlign = 'left';
+    }
+}
+
+function getLesCoureurs(idCategorie) {
+    appelAjax({
+        url: 'ajax/getlescoureurs.php',
+        data: {idCategorie: idCategorie},
+        success: afficher
+    });
+}
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
 
 // alimentation de la zone de liste des catégories
 for (const element of data) {
     idCategorie.add(new Option(element.nom, element.id));
 }
 
-// gestionnaire d'évènement
-idCategorie.onchange = () => {
-    if (idCategorie.value !== "0") {
-        getLesCoureurs(idCategorie.value);
-    }
-};
-
-function getLesCoureurs(idCategorie) {
-    $.ajax({
-        url: 'ajax/getlescoureurs.php',
-        method: 'post',
-        data: {idCategorie: idCategorie},
-        dataType: 'json',
-        success: data => {
-           table.setData(data);
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
-
+// sélection de la première catégorie
+getLesCoureurs(idCategorie.value);

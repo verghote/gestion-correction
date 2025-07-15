@@ -1,47 +1,29 @@
 "use strict";
 
-import {
-    afficherErreur, afficherDansConsole, genererMessage
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-/* global data, Tabulator */
+import {appelAjax} from "/composant/fonction/ajax.js";
+import {activerTri } from "/composant/fonction/tableau.js";
 
-// récupération des données de l'interface
+
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+
+/* global data  */
+
 const idBloc = document.getElementById('idBloc');
 const idDomaine = document.getElementById('idDomaine');
-const msg = document.getElementById('msg');
+const lesLignes = document.getElementById('lesLignes');
 
-// initialisation du composant Tabulator
-const options = {
-    layout: "fitDataStretch",
-    columns: [
-        {
-            title: "Code",
-            field: "code",
-            width: 100
-        },
-        {
-            title: "Libellé",
-            field: "libelle",
-            formatter: function(cell) {
-                return `<div class="wrap-text">${cell.getValue()}</div>`; // Ajout d'une div avec la classe wrap-text
-            },
-        }
-    ],
-    pagination: false,
-    movableColumns: true, // Déplacement des colonnes
-    resizableColumns: true, // Redimensionnement des colonnes
-    rowFormatter: function (row) {
-        row.getElement().style.backgroundColor = "#FFF";
-    },
-};
-const table = new Tabulator("#tableau", options);
+// il est nécessaire de conserver les compétences dans un tableau afin de pouvoir appliquer le tri sur l'interface
+let lesCompetences = [];
 
-
-// remplir la zone de liste des blocs
-for (const bloc of data) {
-    idBloc.appendChild(new Option(bloc.libelle, bloc.id));
-}
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
 // gestionnaire d'événement sur les zones de liste idBloc
 idBloc.onchange = function() {
@@ -53,65 +35,74 @@ idDomaine.onchange = function() {
     getLesCompetences(idBloc.value, this.value);
 };
 
-// Lancer la fonction getLesdomaines() avec l’id du bloc sélectionné
-getLesDomaines(idBloc.value);
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
 
 function getLesDomaines(idBloc) {
-    $.ajax({
+    appelAjax({
         url: 'ajax/getlesdomaines.php',
-        method: 'post',
         data: {
             idBloc: idBloc,
         },
-        dataType: 'json',
-        success: traiterReponse,
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-            afficherDansConsole(reponse.responseText);
+        success: (data) => {
+            // réinitialisation de la liste des domaines
+            idDomaine.innerHTML = '';
+            // ajout de l'option 'Tous les domaines'
+            idDomaine.add(new Option('Tous les domaines', '*'), 0);
+            // ajout des domaines contenu dans la réponse data
+            for (const domaine of data) {
+                idDomaine.add(new Option(domaine.libelle, domaine.idDomaine));
+            }
+            // récupération des compétences du bloc et du domaine sélectionnés
+            getLesCompetences(idBloc, idDomaine.value);
         }
     });
 }
 
-function traiterReponse(data) {
-    if (data.error) {
-        msg.innerHTML = genererMessage(data.error.global, 'orange');
-    } else {
-        // réinitialisation de la liste des domaines
-        idDomaine.innerHTML = '';
-        // ajout de l'option 'Tous les domaines'
-        idDomaine.add(new Option('Tous les domaines', '*'), 0);
-        // ajout des domaines contenant dans data
-        for (const domaine of data) {
-            idDomaine.add(new Option(domaine.libelle, domaine.idDomaine));
-        }
-        // récupération des compétences du bloc et du domaine sélectionnés
-        getLesCompetences(idBloc.value, idDomaine.value);
-    }
-}
 
 function getLesCompetences(idBloc, idDomaine) {
-    $.ajax({
+    appelAjax({
         url: 'ajax/getlescompetences.php',
-        type: 'post',
         data: {
             idBloc: idBloc,
             idDomaine: idDomaine,
         },
-        dataType: 'json',
         success: data => {
-            if (data.error) {
-                msg.innerHTML = genererMessage(data.error.global, 'orange');
-            } else {
-                table.setData(data);
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-            afficherDansConsole(reponse.responseText);
-        }
+            // réinitialisation de la liste des compétences
+            lesCompetences = data;
+            afficher(); }
     });
 }
 
+function afficher() {
+    lesLignes.innerHTML = '';
+    for (const competence of lesCompetences) {
+        const tr = lesLignes.insertRow();
+        tr.style.verticalAlign = 'middle';
 
+        // Colonne : code
+        tr.insertCell().innerText = competence.code;
 
+        // Colonne Libellé
+        tr.insertCell().innerText = competence.libelle;
+    }
+}
 
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+// remplir la zone de liste des blocs
+for (const bloc of data) {
+    idBloc.appendChild(new Option(bloc.libelle, bloc.id));
+}
+
+// Lancer la fonction getLesdomaines() avec l’id du bloc sélectionné
+getLesDomaines(idBloc.value);
+
+// activer le tri sur le tableau
+activerTri({
+    idTable: "leTableau",
+    getData: () => lesCompetences,
+    afficher: afficher
+});

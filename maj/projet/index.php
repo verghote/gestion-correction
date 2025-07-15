@@ -9,20 +9,16 @@ $titre = "Gestion des projets";
 $lesProjets = Projet::getAll();
 
 if (count($lesProjets) === 0) {
-    Erreur::envoyerReponse("Aucun projet n'est enregistré dans la base de données.", 'global');
+    Erreur::afficherReponse("Aucun projet n'est enregistré dans la base de données.", 'global');
 } else {
     $lesProjets = json_encode($lesProjets);
 }
 
-// récupération de toutes les compétences du bloc 1 pour générer les cases à cocher
-$lesCompetences = json_encode(Competence::getLesCompetences(1));
-
-$head = <<<EOD
+$head = <<<HTML
 <script>
-    let lesCompetences = $lesCompetences;
-    let lesProjets =  $lesProjets;
+    const lesProjets =  $lesProjets;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

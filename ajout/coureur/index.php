@@ -6,13 +6,19 @@ require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
 $titre = "Nouveau licencié";
 
 // récupérer les clubs pour alimenter la zone de liste des clubs
-$data = json_encode(Club::getListe());
+$lesClubs = json_encode(Club::getListe());
 
-$head = <<<EOD
+// récupération de l'intervalle des dates de naissance possible
+$dateMin = json_encode(Categorie::getDateNaissanceMin());
+$dateMax = json_encode(Categorie::getDateNaissanceMax());
+
+$head = <<<HTML
 <script>
-       let data = $data;
+    const lesClubs = $lesClubs;
+    const dateMin = $dateMin;
+    const dateMax = $dateMax;
 </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

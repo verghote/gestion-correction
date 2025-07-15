@@ -1,161 +1,98 @@
 "use strict";
 
-/* global data */
 
-import {
-    configurerFormulaire,
-    donneesValides,
-    filtrerLaSaisie,
-    confirmer,
-    afficherErreurSaisie,
-    afficherSucces,
-    afficherErreur,
-    afficherDansConsole,
-    genererMessage, retournerVersApresConfirmation
-} from 'https://verghote.github.io/composant/fonction.js';
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-// récupération des éléments de l'interface
-const id = document.getElementById('id');
-const nom = document.getElementById('nom');
-const msg = document.getElementById('msg');
-const btnModifier = document.getElementById('btnModifier');
-const btnSupprimer = document.getElementById('btnSupprimer');
-const nb = document.getElementById('nb');
+import {modifierColonne, supprimerEnregistrement} from "/composant/fonction/ajax.js";
+import {confirmer } from '/composant/fonction/afficher.js';
+import {enleverAccent} from "../../composant/fonction/format";
+import {verifier} from "/composant/fonction/controle.js";
+
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
+
+/* global lesClubs */
+
+const lesLignes = document.getElementById('lesLignes');
+
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
 
-configurerFormulaire(true);
-filtrerLaSaisie('nom', /[A-Za-zÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ '-.]/);
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
 
-// sur le changement de club, il faut récupérer les informations du club
-id.onchange = charger;
 
-// demande de modification d'un club
-btnModifier.onclick = () => {
-    if (donneesValides()) {
-        modifier();
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+// Insertion des annonces dans la balise tbody
+for (const club of lesClubs) {
+    const id = club.id;
+    const tr = lesLignes.insertRow();
+    tr.id = id;
+    tr.style.verticalAlign = 'middle';
+
+    // Colonne permettant de demander la suppression du club
+    let td = tr.insertCell();
+
+    // Bouton supprimer si l'effectif est à 0
+    if (club.nb === 0) {
+        const btnSupprimer = document.createElement('span');
+        btnSupprimer.textContent = '✘';
+        btnSupprimer.style.color = 'red';
+        btnSupprimer.style.cursor = 'pointer';
+        btnSupprimer.title = 'Supprimer';
+        // Fonction de rappel exécutée en cas de succès de la suppression
+        let success = (reponse) => {
+            document.getElementById(id)?.remove();
+        };
+        // fonction à lancer si la demande de confirmation est validée
+        const supprimer = () => {
+            supprimerEnregistrement('club', id, success);
+        };
+
+        // demander la confirmation avant de lancer la fonction
+        btnSupprimer.onclick = () => confirmer(supprimer);
+
+        td.appendChild(btnSupprimer);
     }
-};
 
-// demande de suppression  du club
-btnSupprimer.onclick = function () {
-    confirmer(supprimer);
-};
 
-// alimentation de la zone de liste des clubs
-for (const element of data) {
-    id.add(new Option(element.nom, element.id));
-}
+    // Colonne id (non modifiable)
+    tr.insertCell().innerText = club.id;
 
-// charger les informations du club actuellement sélectionné
-charger();
-
-// charger et afficher les informations sur le club
-function charger() {
-    $.ajax({
-        url: 'ajax/getbyid.php',
-        method: 'POST',
-        data: {
-            id: id.value
-        },
-        dataType: "json",
-        success: data => {
-            if (data.error) {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (key === 'global') {
-                        afficherErreur(message);
-                    } else {
-                        afficherErreurSaisie(key, message);
-                    }
-                }
-            } else {
-                afficher(data);
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
+    // colonne nom (modifiable)
+    td = tr.insertCell();
+    const inputNom = document.createElement('input');
+    inputNom.type = 'textbox';
+    inputNom.classList.add('form-control');
+    inputNom.value = club.nom;
+    // réglage des attributs pour la validation HTML5
+    inputNom.required = true;
+    inputNom.maxlength='70';
+    inputNom.pattern="^[A-Za-z]+([ '\-.]?[A-Za-z0-9])*$";
+    // sur la modification du nom du club
+    inputNom.onchange = function ()  {
+        // On enlève les accents et on met en majuscules
+        this.value = enleverAccent(this.value).toUpperCase();
+        // on vérifie la validité du champ pour lancer la modification
+        if (verifier(this)) {
+            modifierColonne('club', 'nom', this.value, id);
         }
-    });
+    };
+    td.appendChild(inputNom);
+
+    // Colonne effectif (non modifiable)
+    td = tr.insertCell();
+    td.style.textAlign = 'right';
+    td.style.paddingRight = '10px';
+    td.innerText = club.nb;
+
 }
-
-function afficher(data) {
-    nom.value = data.nom;
-    nb.innerText = data.nb + " licencié(s)";
-    btnSupprimer.style.display = data.nb === 0 ? 'block' : 'none';
-}
-
-function modifier() {
-    $.ajax({
-        url: '/ajax/modifiercolonne.php',
-        method: 'POST',
-        data: {
-            table: 'club',
-            colonne: 'nom',
-            valeur: nom.value,
-            id: id.value
-        },
-        dataType: "json",
-        success: data => {
-            if (data.success) {
-                afficherSucces("Modification enregistrée");
-                // modifier le libellé de la zone de liste
-                id.options[id.selectedIndex].text = nom.value.toUpperCase();
-            } else {
-                for (const id in data.error) {
-                    const message = data.error[id];
-                    if (id === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur est survenue lors de l\'ajout');
-                    } else if (id === 'global') {
-                        msg.innerHTML = genererMessage(message);
-                    } else {
-                        afficherErreurSaisie(id, message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
-
-function supprimer() {
-    $.ajax({
-        url: '/ajax/supprimer.php',
-        type: 'POST',
-        data: {
-            table: 'club',
-            id: id.value
-        },
-        dataType: "json",
-        success: (data) => {
-            if (data.success) {
-                retournerVersApresConfirmation("Club supprimé", "/");
-            } else {
-                for (const id in data.error) {
-                    const message = data.error[id];
-                    if (id === 'system') {
-                        console.error(message);
-                        afficherErreur('Une erreur est survenue lors de la suppression');
-                    } else if (id === 'global') {
-                        msg.innerHTML = genererMessage(message);
-                    } else { // ne doit jamais arriver
-                        afficherErreur(message);
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
-        }
-    });
-}
-
-

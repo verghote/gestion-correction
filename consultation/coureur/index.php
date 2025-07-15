@@ -6,12 +6,13 @@ require $_SERVER['DOCUMENT_ROOT'] . "/include/autoload.php";
 $titre = "Les coureurs";
 
 // Récupération des coureurs : licence, nom prenom, sexe, dateNaissanceFr au format fr, idCategorie, nomClub
-$data = json_encode(Coureur::getAll());
-$head = <<<EOD
+$lesCoureurs= json_encode(Coureur::getAll());
+
+$head = <<<HTML
     <script>
-        let data = $data;
+        const lesCoureurs= $lesCoureurs;
     </script>
-EOD;
+HTML;
 
 // chargement de l'interface
 require RACINE . "/include/interface.php";

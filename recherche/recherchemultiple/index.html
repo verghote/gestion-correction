@@ -1,4 +1,4 @@
-<div class="row m-3 ">
+<div class="row" style="text-align: center; margin: 0 auto;">
     <div class="col-auto">
         <label for="sexe" class="visually-hidden">Sexe </label>
         <select class="form-select input-sm " id='sexe'>
@@ -19,8 +19,25 @@
             <option value="*">Toutes les catégories</option>
         </select>
     </div>
+
+</div>
+<div class="text-center">
+    <div class="me-2">Nombre de coureurs : <span id="nb" class="fw-bold text-center"></span></div>
 </div>
 <div id="msg"></div>
-<div style="text-align: center">
-    <div id="tableau"></div>
+
+<table style="margin: auto; margin-top: 20px; ">
+    <thead class="">
+    <tr>
+        <th style="width: 100px; text-align: center">Licence</th>
+        <th style="width: 350px; text-align: left">Nom</th>
+        <th style="width: 20px; text-align: center" class="masquer">Sexe</th>
+        <th style="width: 100px; text-align: center" class="masquer">Né(e) le</th>
+        <th style="width: 80px; text-align: center ">Catégorie</th>
+        <th style="width: 400px;text-align: left ">Club</th>
+    </tr>
+    </thead>
+    <tbody id="lesLignes"></tbody>
+</table>
 </div>
+

@@ -5,8 +5,8 @@ declare(strict_types=1);
  * Nécessite un fichier de configuration database.php stocké dans le répertoire /.config du projet
  * Le fichier de configuration doit retourner un tableau associatif dont les clés sont les paramètres de connexion
  * @Author : Guy Verghote
- * @Version : 2025.1
- * @Date : 03/05/2025
+ * @Version : 2025.3
+ * @Date : 08/07/2025
  */
 
 class Database
@@ -35,7 +35,7 @@ class Database
                 self::$instance = $db;
             } catch (PDOException $e) {
                 $msg = substr($e->getMessage(), strrpos($e->getMessage(), ']') + 1);
-                Erreur::envoyerReponse('Accès à la base de données impossible : ' . $msg, 'global');
+                Erreur::traiterReponse('Accès à la base de données impossible : ' . $msg, 'global');
             }
         }
         return self::$instance;
@@ -49,19 +49,19 @@ class Database
     {
         $configFile = $_SERVER['DOCUMENT_ROOT']  . "/.config/database.php";
         // Vérification de l'existence du fichier de configuration
-        if (!file_exists($configFile)) {
-            Erreur::envoyerReponse("Fichier de configuration de la base de données introuvable : $configFile", 'global');
+        if (!is_file($configFile)) {
+            Erreur::traiterReponse("Fichier de configuration de la base de données introuvable : $configFile", 'global');
         }
         $lesParametres = require $configFile;
         // Vérification du type de données retourné
         if (!is_array($lesParametres)) {
-            Erreur::envoyerReponse('Fichier de configuration de la base de données incorrect', 'global');
+            Erreur::traiterReponse('Fichier de configuration de la base de données incorrect', 'global');
         }
 
         // Vérification de la présence des clés obligatoires
         foreach (['host', 'database', 'user', 'password'] as $key) {
             if (!isset($lesParametres[$key])) {
-                Erreur::envoyerReponse("Clé de configuration manquante : $key", 'global');
+                Erreur::traiterReponse("Clé de configuration manquante : $key", 'global');
             }
         }
         // Alimentation des paramètres ayant des valeurs par défaut

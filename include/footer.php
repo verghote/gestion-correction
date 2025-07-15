@@ -1,1 +1,4 @@
-<div>© 2024 Guy Verghote</div>
+<?php
+$annee = date('Y');
+echo "<span>® $annee Guy Verghote</span>";
+?>

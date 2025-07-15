@@ -1,24 +1,19 @@
 ﻿"use strict";
-// Ajout d'un coureur
+// -----------------------------------------------------------------------------------
+// Import des fonctions nécessaires
+// -----------------------------------------------------------------------------------
 
-import {
-    configurerFormulaire,
-    donneesValides,
-    filtrerLaSaisie,
-    viderLesChamps,
-    afficherErreurSaisie,
-    afficherSucces,
-    afficherErreur,
-    afficherDansConsole,
-    enleverAccent,
-    supprimerEspace, genererMessage
-} from 'https://verghote.github.io/composant/fonction.js';
+import {appelAjax} from "/composant/fonction/ajax.js";
+import {retournerVersApresConfirmation } from "/composant/fonction/afficher.js";
+import {configurerFormulaire, configurerDate, donneesValides, filtrerLaSaisie} from "/composant/fonction/controle.js";
+import {enleverAccent,supprimerEspace} from '/composant/fonction/format.js';
 
-// variables globales
+// -----------------------------------------------------------------------------------
+// Déclaration des variables globales
+// -----------------------------------------------------------------------------------
 
-/* global data */
+/* global lesClubs, dateMin, dateMax */
 
-// récupération des éléments sur l'interface
 const licence = document.getElementById('licence');
 const nom = document.getElementById('nom');
 const prenom = document.getElementById('prenom');
@@ -31,25 +26,11 @@ const telephone = document.getElementById('telephone');
 const msg = document.getElementById('msg');
 const btnAjouter = document.getElementById('btnAjouter');
 
-// Données de test
-nom.value = 'Dupont';
-prenom.value = 'Hervé';
-dateNaissance.value = '2001-01-01';
-licence.value = '000000';
 
-// alimentation du formulaire
-for (const element of data) {
-    idClub.add(new Option(element.nom, element.id));
-}
+// -----------------------------------------------------------------------------------
+// Procédures évènementielles
+// -----------------------------------------------------------------------------------
 
-// contrôle des données
-configurerFormulaire();
-filtrerLaSaisie('telephone', /[0-9]/);
-filtrerLaSaisie('licence', /[0-9]/);
-filtrerLaSaisie('nom', /[A-Za-z '-]/);
-filtrerLaSaisie('prenom', /[A-Za-zÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ '-]/);
-
-// Lancement des traitements
 btnAjouter.onclick = () => {
     // mise en forme des données
     nom.value = enleverAccent(supprimerEspace(nom.value)).toUpperCase();
@@ -61,59 +42,65 @@ btnAjouter.onclick = () => {
     }
 };
 
-nom.focus();
+// -----------------------------------------------------------------------------------
+// Fonctions de traitement
+// -----------------------------------------------------------------------------------
 
 function ajouter() {
     // Alimentation de l'objet formData pour le transfert des données
-    const monFormulaire = new FormData();
-    monFormulaire.append('table', 'coureur');
-    monFormulaire.append('nom', nom.value);
-    monFormulaire.append('prenom', prenom.value);
-    monFormulaire.append('sexe', sexe.value);
-    monFormulaire.append('dateNaissance', dateNaissance.value);
-    monFormulaire.append('licence', licence.value);
-    monFormulaire.append('idClub', idClub.value);
-    monFormulaire.append('ffa', ffa.checked ? '1' : '0');
+    const formData = new FormData();
+    formData.append('table', 'coureur');
+    formData.append('nom', nom.value);
+    formData.append('prenom', prenom.value);
+    formData.append('sexe', sexe.value);
+    formData.append('dateNaissance', dateNaissance.value);
+    formData.append('licence', licence.value);
+    formData.append('idClub', idClub.value);
+    formData.append('ffa', ffa.checked ? '1' : '0');
 
     // prise en compte des champs optionnels
     if (email.value.length > 0) {
-        monFormulaire.append('email', email.value);
+        formData.append('email', email.value);
     }
     if (telephone.value.length > 0) {
-        monFormulaire.append('telephone', telephone.value);
+        formData.append('telephone', telephone.value);
     }
 
     //  demande d'ajout dans la base de données
-    $.ajax({
+    appelAjax({
         url: '/ajax/ajouter.php',
-        method: 'POST',
-        async: false,
-        data: monFormulaire,
-        processData: false,
-        contentType: false,
-        dataType: 'json',
+        data: formData,
         success: (data) => {
-            if (data.success) {
-                // Mise à jour de l'interface
-                viderLesChamps();
-                afficherSucces(data.success);
-            } else {
-                for (const key in data.error) {
-                    const message = data.error[key];
-                    if (key === 'system') {
-                        console.log(message);
-                        afficherErreur('Une erreur système est survenue lors de l\'opération ');
-                    } else if (key === 'global') {
-                        msg.innerHTML =  genererMessage(message);
-                    } else  {
-                        afficherErreurSaisie(key, message );
-                    }
-                }
-            }
-        },
-        error: reponse => {
-            afficherErreur('Une erreur imprévue est survenue');
-           afficherDansConsole(reponse.responseText);
+                retournerVersApresConfirmation(data.success, '/consultation/coureur');
         }
     });
 }
+
+// -----------------------------------------------------------------------------------
+// Programme principal
+// -----------------------------------------------------------------------------------
+
+// alimentation de la zone de liste des clubs
+for (const element of lesClubs) {
+    idClub.add(new Option(element.nom, element.id));
+}
+
+// contrôle des données
+configurerFormulaire();
+filtrerLaSaisie('telephone', /[0-9]/);
+filtrerLaSaisie('licence', /[0-9]/);
+filtrerLaSaisie('nom', /[A-Za-z '-]/);
+filtrerLaSaisie('prenom', /[A-Za-zÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ '-]/);
+
+
+// La date doit être comprise entre dateMin et dateMax
+configurerDate(dateNaissance, {
+    min:dateMin,
+    max: dateMax,
+    valeur: dateMax
+});
+
+// Données de test
+nom.value = 'Dupont';
+prenom.value = 'Hervé';
+licence.value = '000000';
